@@ -21,8 +21,16 @@ async function migrate() {
     await client.connect();
     console.log('Connected to Supabase successfully.');
 
-    const res = await client.query("ALTER TABLE master_egzersizler ADD COLUMN IF NOT EXISTS gruplar JSONB DEFAULT '{}'::jsonb;");
-    console.log('Migration successful:', res);
+    await client.query(`
+      ALTER TABLE master_egzersizler
+        ADD COLUMN IF NOT EXISTS gruplar JSONB DEFAULT '{}'::jsonb;
+
+      ALTER TABLE uyeler
+        ADD COLUMN IF NOT EXISTS boy NUMERIC,
+        ADD COLUMN IF NOT EXISTS cinsiyet TEXT,
+        ADD COLUMN IF NOT EXISTS kayit_tarihi DATE;
+    `);
+    console.log('Migration successful.');
 
   } catch (err) {
     console.error('Migration failed:', err);
