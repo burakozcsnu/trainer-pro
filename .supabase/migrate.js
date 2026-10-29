@@ -20,12 +20,13 @@ async function migrate() {
   try {
     await client.connect();
     console.log('Connected to Supabase successfully.');
-    
+
     const res = await client.query("ALTER TABLE master_egzersizler ADD COLUMN IF NOT EXISTS gruplar JSONB DEFAULT '{}'::jsonb;");
     console.log('Migration successful:', res);
-    
+
   } catch (err) {
     console.error('Migration failed:', err);
+    process.exitCode = 1;
   } finally {
     await client.end();
   }

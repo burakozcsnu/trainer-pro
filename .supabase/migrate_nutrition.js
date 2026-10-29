@@ -20,7 +20,7 @@ async function migrate() {
   try {
     await client.connect();
     console.log('Connected to Supabase successfully.');
-    
+
     // Master Besinler Tablosu (Library)
     await client.query(`
       CREATE TABLE IF NOT EXISTS master_besinler (
@@ -50,6 +50,7 @@ async function migrate() {
 
   } catch (err) {
     console.error('Migration failed:', err);
+    process.exitCode = 1;
   } finally {
     await client.end();
   }
