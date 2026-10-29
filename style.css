@@ -1115,23 +1115,23 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 
 body::before {
     background:
-        radial-gradient(circle at 8% 0%, rgba(99, 216, 255, 0.12), transparent 28%),
-        radial-gradient(circle at 92% 18%, rgba(167, 139, 250, 0.12), transparent 26%),
-        linear-gradient(145deg, #080d1a 0%, #10172b 52%, #0b1020 100%);
+        radial-gradient(circle at 8% 0%, rgba(251, 113, 133, 0.12), transparent 28%),
+        radial-gradient(circle at 92% 18%, rgba(52, 211, 153, 0.1), transparent 26%),
+        linear-gradient(145deg, #080b14 0%, #1b1022 52%, #100b18 100%);
 }
 .content {
     background:
-        radial-gradient(circle at 90% 0%, rgba(99, 216, 255, 0.09), transparent 32%),
-        radial-gradient(circle at 10% 55%, rgba(167, 139, 250, 0.07), transparent 28%),
-        #0b1222;
+        radial-gradient(circle at 90% 0%, rgba(251, 113, 133, 0.1), transparent 32%),
+        radial-gradient(circle at 10% 55%, rgba(52, 211, 153, 0.07), transparent 28%),
+        #160f1d;
 }
 .sidebar,
 .mobile-brand {
-    background: linear-gradient(180deg, #111b33 0%, #0d1528 100%);
+    background: linear-gradient(180deg, #24132d 0%, #171021 100%);
 }
 .logo,
 .mobile-logo {
-    background: linear-gradient(100deg, #e8f7ff 12%, #63d8ff 48%, #a78bfa 88%);
+    background: linear-gradient(100deg, #fff1f2 8%, #fb7185 45%, #c084fc 88%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -1139,22 +1139,22 @@ body::before {
 .logo span,
 .mobile-logo span {
     color: transparent;
-    background: linear-gradient(100deg, #63d8ff, #a78bfa);
+    background: linear-gradient(100deg, #fb7185, #c084fc);
     -webkit-background-clip: text;
     background-clip: text;
 }
 .nav-btn.active,
 .tab-btn.active {
-    color: var(--primary-strong);
-    background: rgba(99, 216, 255, 0.12);
-    border-color: rgba(99, 216, 255, 0.3);
+    color: #ffe4e6;
+    background: rgba(251, 113, 133, 0.16);
+    border-color: rgba(251, 113, 133, 0.38);
 }
 .nav-btn:nth-child(2):hover,
 .tab-btn:nth-child(2):hover {
     color: var(--accent);
 }
 .global-search-bar {
-    background: rgba(10, 16, 32, 0.94);
+    background: rgba(22, 15, 29, 0.95);
     border-bottom-color: var(--border-soft);
 }
 .btn-back:hover,
@@ -1164,57 +1164,57 @@ body::before {
 }
 .btn-primary,
 .fab {
-    background: var(--primary);
-    border-color: var(--primary);
-    box-shadow: 0 8px 24px rgba(99, 216, 255, 0.2);
+    background: #fb7185;
+    border-color: #fb7185;
+    box-shadow: 0 8px 24px rgba(251, 113, 133, 0.24);
 }
 .btn-primary:hover,
 .fab:hover {
-    background: var(--primary-strong);
-    border-color: var(--primary-strong);
+    background: #fda4af;
+    border-color: #fda4af;
 }
 .card:hover {
-    border-color: rgba(99, 216, 255, 0.65);
+    border-color: rgba(251, 113, 133, 0.65);
 }
 .card {
-    background: linear-gradient(145deg, #1d3152 0%, #14233d 100%);
-    border-color: rgba(99, 216, 255, 0.34);
-    box-shadow: 0 10px 28px rgba(3, 10, 28, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    background: linear-gradient(145deg, #3a1c38 0%, #24172c 100%);
+    border-color: rgba(192, 132, 252, 0.38);
+    box-shadow: 0 10px 28px rgba(9, 4, 17, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .member-overview-card {
-    background: linear-gradient(145deg, #16456a 0%, #122d4e 100%);
-    border-color: rgba(99, 216, 255, 0.46);
-    box-shadow: 0 8px 22px rgba(20, 120, 180, 0.18);
+    background: linear-gradient(145deg, #8b304b 0%, #55233d 100%);
+    border-color: rgba(251, 113, 133, 0.58);
+    box-shadow: 0 8px 22px rgba(190, 45, 93, 0.22);
 }
 .member-overview-card:nth-child(2) {
-    background: linear-gradient(145deg, #4a2d78 0%, #2a2055 100%);
-    border-color: rgba(167, 139, 250, 0.52);
+    background: linear-gradient(145deg, #60429a 0%, #39285f 100%);
+    border-color: rgba(192, 132, 252, 0.58);
     box-shadow: 0 8px 22px rgba(128, 75, 210, 0.2);
 }
 .member-overview-card:nth-child(3) {
-    background: linear-gradient(145deg, #155b58 0%, #123b45 100%);
-    border-color: rgba(110, 231, 183, 0.46);
+    background: linear-gradient(145deg, #19775f 0%, #124b43 100%);
+    border-color: rgba(52, 211, 153, 0.56);
     box-shadow: 0 8px 22px rgba(40, 170, 140, 0.18);
 }
 .stat-card:nth-child(1) {
-    background: linear-gradient(145deg, #15527c 0%, #163658 100%) !important;
-    border-color: rgba(99, 216, 255, 0.5);
+    background: linear-gradient(145deg, #8b304b 0%, #55233d 100%) !important;
+    border-color: rgba(251, 113, 133, 0.58);
 }
 .stat-card:nth-child(2) {
-    background: linear-gradient(145deg, #55327f 0%, #32235d 100%) !important;
-    border-color: rgba(167, 139, 250, 0.52);
+    background: linear-gradient(145deg, #60429a 0%, #39285f 100%) !important;
+    border-color: rgba(192, 132, 252, 0.58);
 }
 .stat-card:nth-child(3) {
-    background: linear-gradient(145deg, #17645c 0%, #17443f 100%) !important;
-    border-color: rgba(110, 231, 183, 0.5);
+    background: linear-gradient(145deg, #19775f 0%, #124b43 100%) !important;
+    border-color: rgba(52, 211, 153, 0.56);
 }
 .stat-card:nth-child(4) {
-    background: linear-gradient(145deg, #85511d 0%, #55331c 100%) !important;
-    border-color: rgba(251, 191, 36, 0.56);
+    background: linear-gradient(145deg, #a7661e 0%, #67401c 100%) !important;
+    border-color: rgba(251, 191, 36, 0.62);
 }
 .member-overview-card span,
 .stat-card span {
-    color: #d7e8f7;
+    color: #fff1f2;
 }
 .member-overview-card strong,
 .stat-card h2 {
@@ -1229,20 +1229,32 @@ body::before {
     color: var(--success);
 }
 .measurement-summary {
-    background: rgba(99, 216, 255, 0.07);
-    border-color: rgba(99, 216, 255, 0.24);
+    background: rgba(52, 211, 153, 0.1);
+    border-color: rgba(52, 211, 153, 0.3);
 }
 .tag {
-    background: rgba(99, 216, 255, 0.12);
-    border-color: rgba(99, 216, 255, 0.25);
+    background: rgba(251, 113, 133, 0.14);
+    border-color: rgba(251, 113, 133, 0.3);
 }
 .tag.secondary {
-    background: rgba(167, 139, 250, 0.12);
-    color: #d7ccff;
-    border-color: rgba(167, 139, 250, 0.25);
+    background: rgba(192, 132, 252, 0.14);
+    color: #f0ddff;
+    border-color: rgba(192, 132, 252, 0.3);
 }
 .tag.accent {
     background: rgba(251, 191, 36, 0.1);
     color: #fde68a;
     border-color: rgba(251, 191, 36, 0.25);
+}
+.profile-content-wrapper,
+.analytics-container,
+.pro-form,
+.chart-main {
+    background: linear-gradient(145deg, #281936 0%, #1b1429 100%);
+    border-color: rgba(192, 132, 252, 0.28);
+}
+.measurement-summary,
+.last-perf-hint {
+    background: rgba(52, 211, 153, 0.1);
+    border-color: rgba(52, 211, 153, 0.3);
 }
