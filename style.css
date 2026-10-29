@@ -1094,3 +1094,99 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
+
+/* Vibrant accent palette */
+:root {
+    --bg: #0a1020;
+    --surface: #141c2e;
+    --surface-soft: #11192a;
+    --surface-raised: #1c2940;
+    --primary: #63d8ff;
+    --primary-strong: #b7efff;
+    --accent: #a78bfa;
+    --text: #edf4ff;
+    --text-dim: #9aaac0;
+    --border: #2b3b56;
+    --border-soft: rgba(99, 216, 255, 0.18);
+    --danger: #fb7185;
+    --success: #6ee7b7;
+    --warning: #fbbf24;
+}
+
+body::before {
+    background:
+        radial-gradient(circle at 8% 0%, rgba(99, 216, 255, 0.09), transparent 28%),
+        radial-gradient(circle at 92% 18%, rgba(167, 139, 250, 0.08), transparent 26%);
+}
+.content {
+    background:
+        radial-gradient(circle at 90% 0%, rgba(99, 216, 255, 0.07), transparent 32%),
+        radial-gradient(circle at 10% 55%, rgba(167, 139, 250, 0.04), transparent 28%);
+}
+.sidebar,
+.mobile-brand {
+    background: #0e1628;
+}
+.logo span,
+.mobile-logo span {
+    color: var(--primary);
+}
+.nav-btn.active,
+.tab-btn.active {
+    color: var(--primary-strong);
+    background: rgba(99, 216, 255, 0.12);
+    border-color: rgba(99, 216, 255, 0.3);
+}
+.nav-btn:nth-child(2):hover,
+.tab-btn:nth-child(2):hover {
+    color: var(--accent);
+}
+.global-search-bar {
+    background: rgba(10, 16, 32, 0.94);
+    border-bottom-color: var(--border-soft);
+}
+.btn-back:hover,
+.btn-secondary:hover {
+    border-color: var(--primary);
+    background: #253652;
+}
+.btn-primary,
+.fab {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 8px 24px rgba(99, 216, 255, 0.2);
+}
+.btn-primary:hover,
+.fab:hover {
+    background: var(--primary-strong);
+    border-color: var(--primary-strong);
+}
+.card:hover {
+    border-color: rgba(99, 216, 255, 0.65);
+}
+.member-overview-card:nth-child(2) strong,
+.stat-card:nth-child(2) h2 {
+    color: var(--accent);
+}
+.member-overview-card:nth-child(3) strong,
+.stat-card:nth-child(3) h2 {
+    color: var(--success);
+}
+.measurement-summary {
+    background: rgba(99, 216, 255, 0.07);
+    border-color: rgba(99, 216, 255, 0.24);
+}
+.tag {
+    background: rgba(99, 216, 255, 0.12);
+    border-color: rgba(99, 216, 255, 0.25);
+}
+.tag.secondary {
+    background: rgba(167, 139, 250, 0.12);
+    color: #d7ccff;
+    border-color: rgba(167, 139, 250, 0.25);
+}
+.tag.accent {
+    background: rgba(251, 191, 36, 0.1);
+    color: #fde68a;
+    border-color: rgba(251, 191, 36, 0.25);
+}
