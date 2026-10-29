@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.46'; 
+    const APP_VERSION = '1.3.47';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     try {
@@ -166,7 +166,7 @@
             time: new Date().toLocaleTimeString('tr-TR')
         });
         if (state.undoStack.length > 20) state.undoStack.pop();
-        
+
     };
 
     window.globalUndo = () => {
@@ -210,7 +210,7 @@
     };
 
     // --- NAVIGATION ---
-    
+
     window.nav = (id, saveHistory = true) => {
         if (saveHistory) {
             const currentTop = state.navHistory[state.navHistory.length - 1];
@@ -224,7 +224,7 @@
 
     window.goBack = () => {
         if (state.navHistory.length > 1) {
-            state.navHistory.pop(); 
+            state.navHistory.pop();
             window.nav(state.navHistory[state.navHistory.length - 1], false);
         } else {
             window.nav('members-view', false);
@@ -268,7 +268,7 @@
                 const hrs = Math.floor(seconds / 3600);
                 const mins = Math.floor((seconds % 3600) / 60);
                 const secs = seconds % 60;
-                document.getElementById('timer-val').innerText = 
+                document.getElementById('timer-val').innerText =
                     `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             }, 1000);
             btn.innerText = '⏸ Durdur';
@@ -297,7 +297,7 @@
         const myM = state.measurements.filter(m => m.member_id == state.activeMemberId).sort((a,b)=>new Date(b.tarih)-new Date(a.tarih));
         const myW = state.workouts.filter(w => w.member_id == state.activeMemberId);
         const myD = state.diets.filter(d => d.member_id == state.activeMemberId).sort((a,b)=>new Date(b.tarih)-new Date(a.tarih));
-        
+
         document.getElementById('stat-weight').innerText = myM.length > 0 ? `${myM[0].weight} kg` : '--';
         document.getElementById('stat-fat').innerText = myM.length > 0 ? `%${myM[0].fat}` : '--';
         document.getElementById('stat-workouts').innerText = myW.length;
@@ -398,9 +398,9 @@
         const chartUnit = measurementField?.unit || '';
         const chartLabel = measurementField?.label || metric.toUpperCase();
 
-        chartObj = new Chart(ctx, { 
-            type: 'line', 
-            data: { labels, datasets: [{ label: chartLabel, data, borderColor: '#00f2fe', tension: 0.4, fill: true, backgroundColor: 'rgba(0, 242, 254, 0.1)' }] }, 
+        chartObj = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets: [{ label: chartLabel, data, borderColor: '#00f2fe', tension: 0.4, fill: true, backgroundColor: 'rgba(0, 242, 254, 0.1)' }] },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -429,7 +429,7 @@
         const myW = state.workouts
             .filter(w => w.member_id == state.activeMemberId)
             .sort((a,b) => new Date(b.tarih) - new Date(a.tarih)); // FIX: sort descending logic via b-a date parse
-        
+
         for (const w of myW) {
             const setler = window.safeJSONParse(w.setler, []);
             const set = setler.find(s => s.ad === exName);
@@ -458,7 +458,7 @@
 
         const filterDropdown = document.getElementById('filter-food-type');
         const filterType = filterDropdown?.value || '';
-        
+
         function getAnaGrup(tip) {
             if (!tip) return 'Yiyecekler';
             if (tip.includes('İçecek')) return 'İçecekler';
@@ -472,7 +472,7 @@
             'İçecekler': {},
             'Supplementler': {}
         };
-        
+
         // Dynamically build available types
         const availableTypes = [...new Set(state.foods.map(f => f.tip || 'Yemek'))].sort();
         if (filterDropdown && filterDropdown.options.length <= 4) { // Initialize dropdown if not yet built dynamically
@@ -480,7 +480,7 @@
             filterDropdown.innerHTML = '<option value="">Tüm Tipler</option>' + availableTypes.map(t => `<option value="${t}">${t}</option>`).join('');
             filterDropdown.value = currVal;
         }
-        
+
         state.foods.forEach(f => {
             if (filterType && f.tip !== filterType) return;
             const t = f.tip || 'Yemek';
@@ -490,19 +490,19 @@
         });
 
         let html = '';
-        
+
         Object.keys(superGroups).forEach(ana => {
             const altGruplar = superGroups[ana];
             const altGrupIsimleri = Object.keys(altGruplar).sort();
             if (altGrupIsimleri.length === 0) return;
-            
+
             let anaIcon = ana === 'Yiyecekler' ? '🍽️' : (ana === 'İçecekler' ? '🥤' : '💊');
             html += `<h2 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--primary); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">${anaIcon} ${ana}</h2>`;
-            
+
             altGrupIsimleri.forEach(alt => {
                 const list = altGruplar[alt];
                 if (list.length === 0) return;
-                
+
                 const displayList = list.slice(0, 100);
                 const hiddenCount = list.length - displayList.length;
                 const hiddenNote = hiddenCount > 0 ? `<div style="text-align:center; padding:1rem; color:var(--text-dim); font-size:0.8rem;">+ ${hiddenCount} besin daha var. Bulmak için Arama Çubuğunu kullanın.</div>` : '';
@@ -563,9 +563,9 @@
         e.preventDefault();
         const existingId = document.getElementById('edit-f-id').value;
         const id = existingId || Date.now();
-        const newData = { 
-            id, 
-            ad: document.getElementById('new-f-name').value, 
+        const newData = {
+            id,
+            ad: document.getElementById('new-f-name').value,
             tip: document.getElementById('new-f-type').value,
             porsiyon: document.getElementById('new-f-portion').value,
             kalori: parseFloat(document.getElementById('new-f-cal').value) || 0,
@@ -581,11 +581,11 @@
     };
 
     window.deleteFood = async (id) => {
-        if (confirm("Silinsin mi?")) { 
-            const oldData = state.foods.find(f => f.id == id); 
-            await supabase.from('master_besinler').delete().eq('id', id); 
-            window.pushToUndoLog('DELETE', 'master_besinler', oldData, null, `Besin Silindi: ${oldData.ad}`); 
-            await sync(); 
+        if (confirm("Silinsin mi?")) {
+            const oldData = state.foods.find(f => f.id == id);
+            await supabase.from('master_besinler').delete().eq('id', id);
+            window.pushToUndoLog('DELETE', 'master_besinler', oldData, null, `Besin Silindi: ${oldData.ad}`);
+            await sync();
         }
     };
 
@@ -626,7 +626,7 @@
     };
 
     // --- YENİ BESLENME SİSTEMİ (ÖĞÜN GRUPLARI & KOPYALAMA) ---
-    
+
     // 1. Tekil Besin Satırı (Kopyalama Özellikli)
     window.addSingleFoodRow = (container, vals = {}) => {
         const div = document.createElement('div');
@@ -678,7 +678,7 @@
         const row = btn.closest('.single-food-row');
         const container = row.parentElement;
         const qtyInput = row.querySelector('.m-qty');
-        
+
         const vals = {
             searchName: row.querySelector('.m-search').value,
             foodId: row.querySelector('.m-name').value,
@@ -712,7 +712,7 @@
 
         wrapper.innerHTML = `
             <button type="button" class="btn-delete" onclick="this.parentElement.remove(); window.updateDietTotals();" style="position:absolute; top:5px; right:5px; width:24px; height:24px; padding:0; display:flex; align-items:center; justify-content:center;">×</button>
-            
+
             <div class="form-group" style="margin-bottom:0.8rem; padding-right: 30px;">
                 <label style="display:block; margin-bottom:0.2rem; color:var(--text-dim); font-size:0.8rem;">Öğün Adı</label>
                 <select class="m-meal-name w-full" required style="font-weight:bold;">
@@ -726,14 +726,14 @@
                     <option value="Gece">Gece Öğünü</option>
                 </select>
             </div>
-            
+
             <div class="foods-container" id="foods-${uniqueId}"></div>
-            
+
             <button type="button" class="btn-secondary mt-1" style="font-size:0.75rem; padding:0.4rem; background:transparent; border:1px dashed var(--border); width:100%; color:var(--text-dim);" onclick="window.addSingleFoodRow(this.previousElementSibling)">
                 + Bu Öğüne Besin Ekle
             </button>
         `;
-        
+
         container.appendChild(wrapper);
         window.addSingleFoodRow(wrapper.querySelector('.foods-container'));
     };
@@ -741,7 +741,7 @@
     window.searchFoodForDiet = (inputEl) => {
         const keyword = inputEl.value.toLowerCase();
         const resultsContainer = inputEl.nextElementSibling.nextElementSibling;
-        
+
         if (keyword.length < 2) {
             resultsContainer.style.display = 'none';
             return;
@@ -765,11 +765,11 @@
         const inputSearch = wrapper.querySelector('.m-search');
         const inputHidden = wrapper.querySelector('.m-name');
         const resultsContainer = wrapper.querySelector('.m-search-results');
-        
+
         inputSearch.value = name;
         inputHidden.value = id;
         resultsContainer.style.display = 'none';
-        
+
         window.fillMealData(inputHidden);
     };
 
@@ -778,17 +778,17 @@
         const wrapper = hiddenInputEl.closest('.single-food-row');
         const f = state.foods.find(x => x.id == id);
         const qtyInput = wrapper.querySelector('.m-qty');
-        
+
         if (f) {
             const match = (f.porsiyon || '').match(/(\d+)\s*(g|ml)/i);
             const baseAmount = match ? parseFloat(match[1]) : 1;
-            
+
             qtyInput.dataset.baseAmount = baseAmount;
             qtyInput.dataset.baseCal = f.kalori;
             qtyInput.dataset.basePro = f.protein;
             qtyInput.dataset.baseCarb = f.karbonhidrat;
             qtyInput.dataset.baseFat = f.yag;
-            
+
             qtyInput.value = baseAmount;
             window.updateMealRow(qtyInput);
         } else {
@@ -806,12 +806,12 @@
         const val = parseFloat(qtyInput.value) || 0;
         const baseAmount = parseFloat(qtyInput.dataset.baseAmount) || 1;
         const multiplier = baseAmount > 0 ? (val / baseAmount) : 0;
-        
+
         wrapper.querySelector('.m-cal').value = (parseFloat(qtyInput.dataset.baseCal || 0) * multiplier).toFixed(1);
         wrapper.querySelector('.m-pro').value = (parseFloat(qtyInput.dataset.basePro || 0) * multiplier).toFixed(1);
         wrapper.querySelector('.m-carb').value = (parseFloat(qtyInput.dataset.baseCarb || 0) * multiplier).toFixed(1);
         wrapper.querySelector('.m-fat').value = (parseFloat(qtyInput.dataset.baseFat || 0) * multiplier).toFixed(1);
-        
+
         window.updateDietTotals();
     };
 
@@ -835,11 +835,11 @@
     window.saveDietPlan = async (e) => {
         e.preventDefault();
         const ogunler = [];
-        
+
         // Ana Öğün Bloklarını Dön
         document.querySelectorAll('.meal-group-wrapper').forEach(mealWrapper => {
             const ogunAdi = mealWrapper.querySelector('.m-meal-name').value;
-            
+
             // Öğünün içindeki alt besinleri dön
             mealWrapper.querySelectorAll('.single-food-row').forEach(row => {
                 const fId = row.querySelector('.m-name').value;
@@ -859,12 +859,12 @@
             });
         });
 
-        const d = { 
-            id: Date.now(), 
-            member_id: state.activeMemberId, 
-            tarih: document.getElementById('d-date').value, 
-            plan_adi: document.getElementById('d-name').value, 
-            ogunler: JSON.stringify(ogunler) 
+        const d = {
+            id: Date.now(),
+            member_id: state.activeMemberId,
+            tarih: document.getElementById('d-date').value,
+            plan_adi: document.getElementById('d-name').value,
+            ogunler: JSON.stringify(ogunler)
         };
         await supabase.from('beslenme_planlari').upsert(d);
         window.pushToUndoLog('INSERT', 'beslenme_planlari', null, d, `Beslenme Planı: ${d.plan_adi}`);
@@ -878,9 +878,9 @@
             const d = state.diets.find(x => x.id == id);
             if (!d) return;
             const meals = window.safeJSONParse(d.ogunler, []);
-            
+
             let grandCal = 0, grandPro = 0, grandCarb = 0, grandFat = 0;
-            
+
             // 1. Besinleri Öğün Adına (ogun_adi) Göre Grupla
             const groupedMeals = {};
             meals.forEach(m => {
@@ -893,29 +893,29 @@
                 groupedMeals[mealName].tPro += m.protein || 0;
                 groupedMeals[mealName].tCarb += m.karbonhidrat || 0;
                 groupedMeals[mealName].tFat += m.yag || 0;
-                
+
                 grandCal += m.kalori || 0;
                 grandPro += m.protein || 0;
                 grandCarb += m.karbonhidrat || 0;
                 grandFat += m.yag || 0;
             });
-            
+
             document.getElementById('detail-title').innerText = `${d.plan_adi} Detayı`;
-            
+
             // 2. Gruplanmış Verileri Profesyonel UI ile Bas
             let html = `
                 <div style="margin-bottom: 1.5rem; padding: 1.2rem; background: rgba(0, 242, 254, 0.05); border: 1px solid var(--primary); border-radius: 12px; text-align: center;">
                     <div style="color:var(--text-dim); font-size: 0.85rem; margin-bottom: 0.5rem;">Günlük Toplam Makrolar</div>
                     <div style="font-size: 1.2rem; font-weight: bold; color: #fff;">
-                        🔥 ${grandCal.toFixed(0)} <span style="font-size:0.8rem; color:var(--text-dim); font-weight:normal;">kcal</span> &nbsp;|&nbsp; 
-                        P: <span style="color:var(--primary);">${grandPro.toFixed(0)}g</span> &nbsp;|&nbsp; 
-                        C: <span style="color:var(--accent);">${grandCarb.toFixed(0)}g</span> &nbsp;|&nbsp; 
+                        🔥 ${grandCal.toFixed(0)} <span style="font-size:0.8rem; color:var(--text-dim); font-weight:normal;">kcal</span> &nbsp;|&nbsp;
+                        P: <span style="color:var(--primary);">${grandPro.toFixed(0)}g</span> &nbsp;|&nbsp;
+                        C: <span style="color:var(--accent);">${grandCarb.toFixed(0)}g</span> &nbsp;|&nbsp;
                         Y: <span style="color:#ffb142;">${grandFat.toFixed(0)}g</span>
                     </div>
                 </div>
                 <div class="diet-summary-container">
             `;
-            
+
             for (const [mealName, data] of Object.entries(groupedMeals)) {
                 html += `
                 <div class="meal-group" style="margin-bottom: 1.2rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden;">
@@ -937,7 +937,7 @@
                             </thead>
                             <tbody>
                 `;
-                
+
                 data.items.forEach(m => {
                     html += `
                                 <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
@@ -948,14 +948,14 @@
                                 </tr>
                     `;
                 });
-                
+
                 html += `
                             </tbody>
                         </table>
                     </div>
                 </div>`;
             }
-            
+
             html += '</div>';
             document.getElementById('detail-body').innerHTML = html;
             window.openModal('modal-detail');
@@ -963,11 +963,11 @@
     };
 
     window.deleteDietPlan = async (id) => {
-        if (confirm("Silinsin mi?")) { 
-            const oldData = state.diets.find(d => d.id == id); 
-            await supabase.from('beslenme_planlari').delete().eq('id', id); 
-            window.pushToUndoLog('DELETE', 'beslenme_planlari', oldData, null, `Plan Silindi: ${oldData.plan_adi}`); 
-            await sync(); 
+        if (confirm("Silinsin mi?")) {
+            const oldData = state.diets.find(d => d.id == id);
+            await supabase.from('beslenme_planlari').delete().eq('id', id);
+            window.pushToUndoLog('DELETE', 'beslenme_planlari', oldData, null, `Plan Silindi: ${oldData.plan_adi}`);
+            await sync();
         }
     };
 
@@ -1016,7 +1016,7 @@
         const filterBranch = document.getElementById('filter-ex-branch')?.value || '';
 
         const groups = { 'Üst Ekstremite': [], 'Alt Ekstremite': [], 'Branşa Özel': [], 'Genel': [] };
-        
+
         state.exercises.forEach(ex => {
             const g = window.safeJSONParse(ex.gruplar, {});
             const exBodyPart = g.bodyPart || '';
@@ -1055,7 +1055,7 @@
                             if (g.muscles) g.muscles.forEach(m => tagsHtml += `<span class="tag secondary">${m}</span>`);
                             if (g.branch) tagsHtml += `<span class="tag accent">${g.branch}</span>`;
                             else if (ex.brans) tagsHtml += `<span class="tag accent">${ex.brans}</span>`;
-                            
+
                             return `
                             <div class="card">
                                 <h3>${ex.ad}</h3>
@@ -1086,7 +1086,7 @@
                 return details.some(ex => state.exercises.find(e => e.ad === ex.ad && e.brans === br));
             });
             if (myProgs.length === 0 && br !== 'Fitness') return '';
-            
+
             return `
                 <div class="accordion">
                     <div class="acc-header" onclick="window.toggleAcc('br-${br.replace(/\s+/g, '-')}')">
@@ -1109,7 +1109,7 @@
         }).join('');
     }
 
-    
+
     function renderCardioHistory() {
         const container = document.getElementById('c-history-tabs');
         if (!container) return;
@@ -1214,7 +1214,7 @@
         if (!container) return;
         const myDocs = state.documents.filter(d => d.member_id == state.activeMemberId);
         const myCloudFiles = (state.cloudFiles || []).filter(f => !myDocs.some(d => d.yol === `${state.activeMemberId}/${f.name}`));
-        
+
         let html = myDocs.map(d => `
             <div class="doc-card">
                 <div class="doc-info"><h4>${d.adi}</h4><span>${d.tip || 'Dosya'}</span></div>
@@ -1224,7 +1224,7 @@
                 </div>
             </div>
         `).join('');
-        
+
         html += myCloudFiles.map(f => `
             <div class="doc-card">
                 <div class="doc-info"><h4>${f.name.split('_').slice(1).join('_') || f.name}</h4><span>Bulut</span></div>
@@ -1234,7 +1234,7 @@
                 </div>
             </div>
         `).join('');
-        
+
         container.innerHTML = html || '<div class="no-results mt-1">Döküman bulunamadı.</div>';
     }
 
@@ -1260,12 +1260,18 @@
         const heightVal = document.getElementById('m-height') ? parseFloat(document.getElementById('m-height').value) : null;
         const m = {
             id,
-            ad_soyad: document.getElementById('m-name').value,
+            ad_soyad: document.getElementById('m-name').value.trim(),
             brans: document.getElementById('m-branch').value,
             boy: heightVal || null,
-            cinsiyet: document.getElementById('m-gender').value
+            cinsiyet: document.getElementById('m-gender').value,
+            kayit_tarihi: document.getElementById('m-reg-date').value
         };
-        await supabase.from('uyeler').upsert(m);
+        const { error } = await supabase.from('uyeler').upsert(m);
+        if (error) {
+            console.error('[Member save] Supabase error:', error);
+            alert(`Üye kaydedilemedi: ${error.message}`);
+            return;
+        }
         window.pushToUndoLog(existingId ? 'UPDATE' : 'INSERT', 'uyeler', oldData, m, `Üye: ${m.ad_soyad}`);
         await sync();
         window.closeModal('modal-member');
@@ -1337,20 +1343,20 @@
         }
     };
 
-    
+
     window.openCardioModal = () => {
         document.getElementById('c-id').value = '';
         document.getElementById('c-modal-title').innerText = 'Yeni Test Al';
         const form = document.querySelector('#modal-cardio form');
         if (form) form.reset();
-        
+
         const today = new Date();
         const dateString = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         document.getElementById('c-date').value = dateString;
-        
+
         const member = state.members.find(m => m.id == state.activeMemberId);
         if (member && member.boy) document.getElementById('c-height').value = member.boy;
-        
+
         // Auto-fill weight from latest measurement if available
         const myM = state.measurements.filter(m => m.member_id == state.activeMemberId).sort((a,b) => new Date(b.tarih) - new Date(a.tarih));
         if (myM.length > 0 && myM[0].weight) document.getElementById('c-weight').value = myM[0].weight;
@@ -1386,17 +1392,17 @@
         const dateVal = document.getElementById('c-date').value;
         const datedMeasurement = state.measurements.find(x => x.member_id == state.activeMemberId && x.tarih == dateVal);
         let m = datedMeasurement;
-        
+
         if (m) {
              m = { ...m, weight: parseFloat(document.getElementById('c-weight').value) || null };
              // VERY IMPORTANT: Strip out virtual frontend properties before sending to Supabase!
-             delete m.yas; delete m.rhr; delete m.cooper; 
+             delete m.yas; delete m.rhr; delete m.cooper;
              delete m.bmr; delete m.mhr; delete m.hrr; delete m.vo2max;
         } else {
              m = { id, member_id: state.activeMemberId, tarih: dateVal, weight: parseFloat(document.getElementById('c-weight').value) || null };
         }
-        
-        // Supabase schema strictness workaround: 
+
+        // Supabase schema strictness workaround:
         // We map the raw inputs into unused/legacy columns to avoid 400 Bad Request
         m.l_leg = parseFloat(document.getElementById('c-age').value) || null; // l_leg stores Age
         m.r_leg = parseFloat(document.getElementById('c-rhr').value) || null; // r_leg stores RHR
@@ -1414,7 +1420,7 @@
     window.openMeasurementModal = () => {
         document.getElementById('m-id').value = '';
         document.getElementById('m-modal-title').innerText = 'Yeni Ölçüm Al';
-        
+
         // Formu temizle ve bugünün tarihini at
         const form = document.querySelector('#modal-measurement form');
         if (form) form.reset();
@@ -1444,12 +1450,12 @@
                 if(el) el.placeholder = '';
             });
         }
-        
+
         // Tarih alanı için timezone offset düzeltmesiyle bugünü bul
         const today = new Date();
         const dateString = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         document.getElementById('m-date').value = dateString;
-        
+
         const member = state.members.find(m => m.id == state.activeMemberId);
         if (member && member.boy) {
             document.getElementById('m-height-measurement').value = member.boy;
@@ -1458,12 +1464,12 @@
         window.openModal('modal-measurement');
     };
 
-    
-    
+
+
     window.calculateAdvancedMetrics = () => {
         const member = state.members.find(m => m.id == state.activeMemberId);
         const gender = member ? member.cinsiyet || 'Erkek' : 'Erkek';
-        
+
         const weight = parseFloat(document.getElementById('c-weight').value);
         const height = parseFloat(document.getElementById('c-height').value);
         const age = parseFloat(document.getElementById('c-age').value);
@@ -1485,7 +1491,7 @@
         if (age) {
             const mhr = Math.round(208 - (0.7 * age));
             document.getElementById('c-mhr').value = mhr;
-            
+
             if (rhr) {
                 const hrr = mhr - rhr;
                 document.getElementById('c-hrr').value = hrr;
@@ -1493,7 +1499,7 @@
         }
 
         // VO2 Max (Queen's College Step Test Formula)
-        if (cooperDistance) { 
+        if (cooperDistance) {
             let vo2max = 0;
             if (gender === 'Kadın') {
                 vo2max = 65.81 - (0.1847 * cooperDistance);
@@ -1507,13 +1513,13 @@
     window.calculateFatPercentage = () => {
         const member = state.members.find(m => m.id == state.activeMemberId);
         const gender = member ? member.cinsiyet || 'Erkek' : 'Erkek';
-        
+
         const weight = parseFloat(document.getElementById('m-weight').value);
         const height = parseFloat(document.getElementById('m-height-measurement').value);
         const waist = parseFloat(document.getElementById('m-waist').value);
         const neck = parseFloat(document.getElementById('m-neck').value);
         const hip = parseFloat(document.getElementById('m-basen').value); // only needed for females
-        
+
         if (!height || !waist || !neck) return; // not enough data
 
         let fat = 0;
@@ -1524,7 +1530,7 @@
         } else {
             fat = 86.010 * Math.log10(waist - neck) - 70.041 * Math.log10(height) + 36.76;
         }
-        
+
         if (fat > 0 && fat < 100) {
             document.getElementById('m-fat').value = fat.toFixed(1);
         }
@@ -1569,12 +1575,12 @@ window.editMeasurement = (id) => {
         const id = existingId || Date.now();
         const dateVal = document.getElementById('m-date').value;
         let m = state.measurements.find(x => x.member_id == state.activeMemberId && x.tarih == dateVal);
-        
+
         const freshData = {
-            id, 
-            member_id: state.activeMemberId, 
-            tarih: dateVal, 
-            weight: parseFloat(document.getElementById('m-weight').value) || null, 
+            id,
+            member_id: state.activeMemberId,
+            tarih: dateVal,
+            weight: parseFloat(document.getElementById('m-weight').value) || null,
             fat: parseFloat(document.getElementById('m-fat').value) || null,
             waist: parseFloat(document.getElementById('m-waist').value) || null,
             chest: parseFloat(document.getElementById('m-chest').value) || null,
@@ -1593,7 +1599,7 @@ window.editMeasurement = (id) => {
         if (m) {
             m = { ...m, ...freshData };
             // VERY IMPORTANT: Strip out virtual frontend properties before sending to Supabase!
-            delete m.yas; delete m.rhr; delete m.cooper; 
+            delete m.yas; delete m.rhr; delete m.cooper;
             delete m.bmr; delete m.mhr; delete m.hrr; delete m.vo2max;
         } else {
             m = freshData;
@@ -1612,12 +1618,12 @@ window.editMeasurement = (id) => {
     window.openWorkoutModal = () => {
         document.getElementById('w-name').value = '';
         document.getElementById('set-rows-container').innerHTML = '';
-        
+
         // Tarih alanı için bugünü bul
         const today = new Date();
         const dateString = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         document.getElementById('w-date').value = dateString;
-        
+
         const loader = document.getElementById('form-template-loader');
         if(loader) loader.value = '';
 
@@ -1630,7 +1636,7 @@ window.editMeasurement = (id) => {
         setDiv.style.marginBottom = '0.4rem';
         setDiv.style.paddingBottom = '0.4rem';
         setDiv.style.borderBottom = '1px dashed rgba(255,255,255,0.1)';
-    
+
         setDiv.innerHTML = `
             <div class="grid" style="grid-template-columns: 2fr 2fr 1.5fr 2fr 1.5fr; gap:0.5rem; align-items:end;">
                 <div class="form-group" style="margin:0;">
@@ -1663,18 +1669,18 @@ window.editMeasurement = (id) => {
             </div>
         `;
         container.appendChild(setDiv);
-        
+
         // Eğer kopyalama işleminden (vals) tip değeri geldiyse onu seçili yap
         if (vals.tip) {
             setDiv.querySelector('.s-tip').value = vals.tip;
         }
     };
-    
+
     // Kopyalama Butonunu Tetikleyen Fonksiyon
     window.duplicateSet = (btn) => {
         const row = btn.closest('.single-set-row');
         const container = row.parentElement;
-        
+
         // Bulunduğu satırdaki mevcut değerleri al
         const vals = {
             weight: row.querySelector('.s-weight').value,
@@ -1682,14 +1688,14 @@ window.editMeasurement = (id) => {
             sure: row.querySelector('.s-sure').value,
             tip: row.querySelector('.s-tip').value
         };
-        
+
         // Aynı değerlerle yeni bir satır oluştur
         window.addSingleSet(container, vals);
     };
     window.addSetRowToWorkout = (exName = '') => {
         const container = document.getElementById('set-rows-container');
         const uniqueId = Date.now() + Math.random();
-    
+
         const wrapper = document.createElement('div');
         wrapper.className = 'set-row-wrapper';
         wrapper.style.marginBottom = '1rem';
@@ -1697,10 +1703,10 @@ window.editMeasurement = (id) => {
         wrapper.style.background = 'rgba(255,255,255,0.02)';
         wrapper.style.borderRadius = '8px';
         wrapper.style.position = 'relative';
-    
+
         wrapper.innerHTML = `
             <button type="button" class="btn-delete" onclick="this.parentElement.remove()" style="position:absolute; top:5px; right:5px; width:24px; height:24px; padding:0; display:flex; align-items:center; justify-content:center;">×</button>
-            
+
             <div class="form-group" style="margin-bottom:0.8rem; padding-right: 30px;">
                 <label style="display:block; margin-bottom:0.2rem; color:var(--text-dim); font-size:0.8rem;">Egzersiz</label>
                 <select class="ex-select s-name w-full" required style="font-weight:bold;">
@@ -1708,22 +1714,22 @@ window.editMeasurement = (id) => {
                     ${state.exercises.map(ex => `<option value="${ex.ad}">${ex.ad}</option>`).join('')}
                 </select>
             </div>
-            
+
             <!-- İçine Setlerin Ekleneceği Alan -->
             <div class="sets-container" id="sets-${uniqueId}"></div>
-            
+
             <button type="button" class="btn-secondary mt-1" style="font-size:0.75rem; padding:0.4rem; background:transparent; border:1px dashed var(--border); width:100%; color:var(--text-dim);" onclick="window.addSingleSet(this.previousElementSibling)">
                 + Bu Harekete Set Ekle
             </button>
         `;
-        
+
         container.appendChild(wrapper);
-    
-        if(exName) { 
-            const s = wrapper.querySelector('.s-name'); 
-            s.value = exName; 
+
+        if(exName) {
+            const s = wrapper.querySelector('.s-name');
+            s.value = exName;
         }
-    
+
         // Blok oluşturulur oluşturulmaz varsayılan olarak 1. Seti içine ekle
         window.addSingleSet(wrapper.querySelector('.sets-container'));
     };
@@ -1731,32 +1737,32 @@ window.editMeasurement = (id) => {
     window.saveWorkout = async (e) => {
         e.preventDefault();
         const setler = [];
-        
+
         // 1. Ana egzersiz bloklarını dön
         document.querySelectorAll('.set-row-wrapper').forEach(wrapper => {
             const exName = wrapper.querySelector('.s-name').value;
-            
+
             // 2. O egzersiz bloğunun içindeki TÜM set satırlarını bul ve sırayla ekle
             wrapper.querySelectorAll('.single-set-row').forEach((setRow, index) => {
-                setler.push({ 
-                    ad: exName, 
+                setler.push({
+                    ad: exName,
                     set_no: index + 1, // Set numarasını 1, 2, 3 diye otomatik belirler
-                    weight: setRow.querySelector('.s-weight').value, 
-                    reps: setRow.querySelector('.s-reps').value, 
-                    sure: setRow.querySelector('.s-sure').value, 
-                    tip: setRow.querySelector('.s-tip').value 
+                    weight: setRow.querySelector('.s-weight').value,
+                    reps: setRow.querySelector('.s-reps').value,
+                    sure: setRow.querySelector('.s-sure').value,
+                    tip: setRow.querySelector('.s-tip').value
                 });
             });
         });
-        
-        const w = { 
-            id: Date.now(), 
-            member_id: state.activeMemberId, 
-            tarih: document.getElementById('w-date').value, 
-            sablon: document.getElementById('w-name').value, 
-            setler: JSON.stringify(setler) 
+
+        const w = {
+            id: Date.now(),
+            member_id: state.activeMemberId,
+            tarih: document.getElementById('w-date').value,
+            sablon: document.getElementById('w-name').value,
+            setler: JSON.stringify(setler)
         };
-        
+
         await supabase.from('antrenmanlar').upsert(w);
         window.pushToUndoLog('INSERT', 'antrenmanlar', null, w, `Antrenman Kaydedildi: ${w.sablon}`);
         await sync();
@@ -1792,10 +1798,10 @@ window.editMeasurement = (id) => {
 
         const p = { id, program_adi: name, detaylar: JSON.stringify(details) };
         const oldData = existingId ? state.programs.find(prog => prog.id == existingId) : null;
-        
+
         await supabase.from('programlar').upsert(p);
         window.pushToUndoLog(existingId ? 'UPDATE' : 'INSERT', 'programlar', oldData, p, `Şablon: ${name}`);
-        
+
         await sync();
         window.closeModal('modal-program');
         alert("Şablon kaydedildi!");
@@ -1835,20 +1841,20 @@ window.editMeasurement = (id) => {
     window.loadTemplateToForm = (programAdiVeyaId) => {
         // Boş seçim yapıldıysa durdur
         if (!programAdiVeyaId) return;
-    
+
         // Şablonu state.programs içinden bul (Dropdown'dan id veya isim gelme ihtimaline karşı ikisini de kontrol ediyoruz)
         const p = state.programs.find(x => x.id == programAdiVeyaId || x.program_adi == programAdiVeyaId);
         if (!p) {
             console.error("Şablon bulunamadı:", programAdiVeyaId);
             return;
         }
-    
+
         // 1. Antrenman adını forma yaz
         document.getElementById('w-name').value = p.program_adi;
-        
+
         // 2. Önceki hareketleri temizle
         document.getElementById('set-rows-container').innerHTML = '';
-        
+
         // 3. Şablon detaylarını (JSON) parse et ve her bir hareket için yeni satır oluştur
         const details = window.safeJSONParse(p.detaylar, []);
         details.forEach(d => {
@@ -1876,11 +1882,11 @@ window.editMeasurement = (id) => {
             const prev = (idx < myM.length - 1) ? myM[idx + 1] : null;
 
             document.getElementById('detail-title').innerText = `${new Date(m.tarih).toLocaleDateString('tr-TR')} Ölçüm Detayları`;
-            
+
             // Calculate advanced metrics
             const member = state.members.find(x => x.id == state.activeMemberId);
             let advancedHtml = '';
-            
+
             // Kardiyo ve Metabolizma Analizi
             let cardioHtml = '';
             if (m.bmr || m.vo2max || m.rhr) {
@@ -1906,7 +1912,7 @@ window.editMeasurement = (id) => {
                     let bmiStatus = bmi < 18.5 ? "Zayıf" : (bmi < 25 ? "Normal" : (bmi < 30 ? "Fazla Kilolu" : "Obez"));
                     bmiHtml = `<div class="stat-card" style="grid-column: span 2; background: rgba(var(--accent-rgb), 0.1); border: 1px solid var(--accent);"><span>BMI (Vücut Kitle İndeksi)</span><h3 style="color:var(--accent);">${bmi} <small>(${bmiStatus})</small></h3></div>`;
                 }
-                
+
                 advancedHtml = `
                     <div style="margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.1);">
                         <h4 style="margin-bottom: 0.5rem; color: var(--accent);">📊 Analiz</h4>
@@ -1965,9 +1971,9 @@ window.editMeasurement = (id) => {
         // state.workouts veya state.antrenmanlar içinden tıklanan antrenmanı bul
         const w = state.workouts.find(x => x.id == id) || (state.antrenmanlar && state.antrenmanlar.find(x => x.id == id));
         if (!w) return;
-        
+
         const setler = window.safeJSONParse(w.setler, []);
-        
+
         // 1. Gelen tüm setleri egzersiz adına (ad) göre grupla
         const groupedSets = {};
         setler.forEach(s => {
@@ -1980,10 +1986,10 @@ window.editMeasurement = (id) => {
 
         // 2. Başlığı modal içine yazdır
         document.getElementById('detail-title').innerText = `${w.sablon || 'Serbest Antrenman'} - ${new Date(w.tarih).toLocaleDateString('tr-TR')}`;
-        
+
         // 3. Gruplanmış verileri profesyonel bir kart/tablo yapısına dönüştür
         let html = '<div class="workout-summary-container">';
-        
+
         for (const [egzersizAdi, sets] of Object.entries(groupedSets)) {
             html += `
             <div class="exercise-group" style="margin-bottom: 1.2rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden;">
@@ -2002,12 +2008,12 @@ window.editMeasurement = (id) => {
                         </thead>
                         <tbody>
             `;
-            
+
             sets.forEach((s, index) => {
                 const setNo = s.set_no || (index + 1);
                 const tipBadge = (s.tip && s.tip !== 'Normal') ? `<span style="background:var(--primary-color, #4CAF50); color:#000; padding:2px 6px; border-radius:4px; font-size:0.65rem; font-weight:bold;">${s.tip}</span>` : '';
                 const sureText = s.sure ? `<span style="color:var(--text-dim); font-size:0.75rem; margin-left: 4px;">⏱️ ${s.sure}s</span>` : '';
-                
+
                 html += `
                             <tr style="border-bottom: 1px dashed rgba(255,255,255,0.05);">
                                 <td style="padding: 0.5rem 0; color: var(--text-dim);">${setNo}</td>
@@ -2017,22 +2023,22 @@ window.editMeasurement = (id) => {
                             </tr>
                 `;
             });
-            
+
             html += `
                         </tbody>
                     </table>
                 </div>
             </div>`;
         }
-        
+
         html += '</div>';
-        
+
         // Modalın içine bas ve modalı aç
         document.getElementById('detail-body').innerHTML = html;
         window.openModal('modal-detail');
-        
-    } catch (err) { 
-        console.error("Antrenman detayı açılırken hata:", err); 
+
+    } catch (err) {
+        console.error("Antrenman detayı açılırken hata:", err);
     }
 };
 
@@ -2113,7 +2119,7 @@ window.editMeasurement = (id) => {
         state.activeMemberId = id;
         const m = state.members.find(x => x.id == id);
         if (m) document.getElementById('prof-name').innerText = m.ad_soyad;
-        
+
         const myM = state.measurements.filter(m => m.member_id == id).sort((a,b) => new Date(b.tarih) - new Date(a.tarih));
         const now = new Date();
         let needsMeasurement = false;
@@ -2124,7 +2130,7 @@ window.editMeasurement = (id) => {
             const lastDate = new Date(myM[0].tarih);
             const diffTime = now.getTime() - lastDate.getTime();
             const diffDays = diffTime / (1000 * 3600 * 24);
-            
+
             // Rolling Guard: Tam olarak 30 gün geçtiyse zorunlu kıl.
             if (diffDays >= 30) {
                 needsMeasurement = true;
@@ -2160,7 +2166,7 @@ window.editMeasurement = (id) => {
         if (includeMembers) state.members.filter(m => m.ad_soyad.toLowerCase().includes(keyword) || m.brans.toLowerCase().includes(keyword)).forEach(m => results.push({ type: 'Member', data: m }));
         if (includeProgs) state.programs.filter(p => p.program_adi.toLowerCase().includes(keyword)).forEach(p => results.push({ type: 'Program', data: p }));
         if (includeWorkouts) state.workouts.filter(w => w.sablon.toLowerCase().includes(keyword)).forEach(w => results.push({ type: 'Workout', data: w }));
-        
+
         if (includeExercises) {
             state.exercises.filter(ex => {
                 const g = window.safeJSONParse(ex.gruplar, {});
@@ -2180,7 +2186,7 @@ window.editMeasurement = (id) => {
         results = results.slice(0, 100);
 
         if (results.length === 0) { container.innerHTML = '<div class="no-results">Eşleşen sonuç bulunamadı.</div>'; return; }
-        
+
         let html = `<div class="grid">${results.map(r => {
             if (r.type === 'Member') return `<div class="card" onclick="window.openProfile(${r.data.id})"><h3>👤 ${r.data.ad_soyad}</h3><p>${r.data.brans}</p></div>`;
             if (r.type === 'Program') return `<div class="card" onclick="window.showProgramDetail(${r.data.id})"><h3>📋 ${r.data.program_adi}</h3></div>`;
@@ -2223,7 +2229,7 @@ window.editMeasurement = (id) => {
 
     async function sync() {
         try {
-            
+
             const results = await Promise.all([
                 supabase.from('uyeler').select('*'),
                 supabase.from('programlar').select('*'),
@@ -2234,10 +2240,10 @@ window.editMeasurement = (id) => {
                 fetchAll('master_besinler'),
                 supabase.from('beslenme_planlari').select('*')
             ]);
-            
 
 
-            
+
+
             const errIndex = results.findIndex(r => r.error);
             if (errIndex !== -1) {
                 console.error("Supabase Error Data:", results[errIndex].error);
@@ -2251,13 +2257,13 @@ window.editMeasurement = (id) => {
                 m.yas = m.l_leg;
                 m.rhr = m.r_leg;
                 m.cooper = m.hips;
-                
+
                 // Recalculate derived metrics (BMR, MHR, HRR, VO2) so they exist in state for the dashboard
                 if (m.yas) {
                     m.mhr = Math.round(208 - (0.7 * m.yas));
                     if (m.rhr) m.hrr = m.mhr - m.rhr;
                 }
-                
+
                 if (m.cooper) {
                     const member = results[0].data.find(x => x.id == m.member_id);
                     const gender = member ? member.cinsiyet || 'Erkek' : 'Erkek';
@@ -2267,7 +2273,7 @@ window.editMeasurement = (id) => {
                         m.vo2max = (111.33 - (0.42 * m.cooper)).toFixed(1);
                     }
                 }
-                
+
                 if (m.weight && m.yas) {
                     const member = results[0].data.find(x => x.id == m.member_id);
                     if (member && member.boy) {
@@ -2281,7 +2287,7 @@ window.editMeasurement = (id) => {
                         m.bmr = Math.round(bmr);
                     }
                 }
-                
+
                 return m;
             });
             state.workouts = results[3].data || [];
@@ -2289,8 +2295,8 @@ window.editMeasurement = (id) => {
             state.exercises = results[5].data || [];
             state.foods = results[6].data || [];
             state.diets = results[7].data || [];
-            
-            
+
+
             refreshAll();
         } catch (error) {
             console.error("SYNC CATCH BLOCK:", error);
@@ -2360,7 +2366,7 @@ window.editMeasurement = (id) => {
                 scheduleRealtimeSync('page-visible');
             }
         });
-        
+
         // Setup fab (floating action button)
         const fab = document.createElement('button');
         fab.className = 'fab';
