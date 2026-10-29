@@ -1115,21 +1115,33 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 
 body::before {
     background:
-        radial-gradient(circle at 8% 0%, rgba(99, 216, 255, 0.09), transparent 28%),
-        radial-gradient(circle at 92% 18%, rgba(167, 139, 250, 0.08), transparent 26%);
+        radial-gradient(circle at 8% 0%, rgba(99, 216, 255, 0.12), transparent 28%),
+        radial-gradient(circle at 92% 18%, rgba(167, 139, 250, 0.12), transparent 26%),
+        linear-gradient(145deg, #080d1a 0%, #10172b 52%, #0b1020 100%);
 }
 .content {
     background:
-        radial-gradient(circle at 90% 0%, rgba(99, 216, 255, 0.07), transparent 32%),
-        radial-gradient(circle at 10% 55%, rgba(167, 139, 250, 0.04), transparent 28%);
+        radial-gradient(circle at 90% 0%, rgba(99, 216, 255, 0.09), transparent 32%),
+        radial-gradient(circle at 10% 55%, rgba(167, 139, 250, 0.07), transparent 28%),
+        #0b1222;
 }
 .sidebar,
 .mobile-brand {
-    background: #0e1628;
+    background: linear-gradient(180deg, #111b33 0%, #0d1528 100%);
+}
+.logo,
+.mobile-logo {
+    background: linear-gradient(100deg, #e8f7ff 12%, #63d8ff 48%, #a78bfa 88%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
 }
 .logo span,
 .mobile-logo span {
-    color: var(--primary);
+    color: transparent;
+    background: linear-gradient(100deg, #63d8ff, #a78bfa);
+    -webkit-background-clip: text;
+    background-clip: text;
 }
 .nav-btn.active,
 .tab-btn.active {
@@ -1163,6 +1175,30 @@ body::before {
 }
 .card:hover {
     border-color: rgba(99, 216, 255, 0.65);
+}
+.card {
+    background: linear-gradient(145deg, #18243a 0%, #121b2d 100%);
+}
+.member-overview-card {
+    background: linear-gradient(145deg, #15243b 0%, #101a2d 100%);
+}
+.member-overview-card:nth-child(2) {
+    background: linear-gradient(145deg, #211d3d 0%, #171a31 100%);
+}
+.member-overview-card:nth-child(3) {
+    background: linear-gradient(145deg, #142f35 0%, #11232d 100%);
+}
+.stat-card:nth-child(1) {
+    background: linear-gradient(145deg, #152b42 0%, #132033 100%) !important;
+}
+.stat-card:nth-child(2) {
+    background: linear-gradient(145deg, #251f45 0%, #191c35 100%) !important;
+}
+.stat-card:nth-child(3) {
+    background: linear-gradient(145deg, #153b3a 0%, #142a30 100%) !important;
+}
+.stat-card:nth-child(4) {
+    background: linear-gradient(145deg, #3a2b1d 0%, #29201e 100%) !important;
 }
 .member-overview-card:nth-child(2) strong,
 .stat-card:nth-child(2) h2 {
