@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.48';
+    const APP_VERSION = '1.3.49';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     try {
@@ -993,18 +993,40 @@
     function renderMembers() {
         const grid = document.getElementById('members-grid');
         if (!grid) return;
+        const overview = document.getElementById('member-overview');
+        if (overview) {
+            const branchCount = new Set(state.members.map(member => member.brans).filter(Boolean)).size;
+            const measuredCount = new Set(state.measurements.map(measurement => measurement.member_id)).size;
+            overview.innerHTML = `
+                <div class="member-overview-card">
+                    <span>Toplam danışan</span>
+                    <strong>${state.members.length}</strong>
+                </div>
+                <div class="member-overview-card">
+                    <span>Aktif branş</span>
+                    <strong>${branchCount}</strong>
+                </div>
+                <div class="member-overview-card">
+                    <span>Ölçümü bulunan</span>
+                    <strong>${measuredCount}</strong>
+                </div>
+            `;
+        }
         const icons = { 'Fitness': '💪', 'Karate': '🥋', 'Basketbol': '🏀', 'Yoga': '🧘', 'Fonksiyonel Egzersiz': '⚡' };
-        grid.innerHTML = state.members.map(m => `
-            <div class="card" onclick="window.openProfile(${m.id})">
-                <div style="font-size: 2.5rem; margin-bottom: 1rem;">${icons[m.brans] || '👤'}</div>
+        grid.innerHTML = state.members.length ? state.members.map(m => `
+            <div class="card member-card" onclick="window.openProfile(${m.id})">
+                <div class="member-card-top">
+                    <div class="member-avatar">${icons[m.brans] || '👤'}</div>
+                    <span class="member-card-arrow">→</span>
+                </div>
                 <h3>${m.ad_soyad}</h3>
-                <p style="color: var(--primary); font-weight: bold; font-size: 0.8rem;">${m.brans}</p>
+                <p class="member-branch">${m.brans || 'Branş belirtilmemiş'}</p>
                 <div class="card-actions">
-                    <button class="btn-edit" onclick="event.stopPropagation(); window.editMember(${m.id})">✎</button>
-                    <button class="btn-delete" onclick="event.stopPropagation(); window.deleteMember(${m.id})">🗑</button>
+                    <button class="btn-edit" onclick="event.stopPropagation(); window.editMember(${m.id})">Düzenle</button>
+                    <button class="btn-delete" onclick="event.stopPropagation(); window.deleteMember(${m.id})">Sil</button>
                 </div>
             </div>
-        `).join('');
+        `).join('') : '<div class="empty-state"><strong>Henüz danışan yok</strong><span>İlk danışanı ekleyerek başlayın.</span></div>';
     }
 
     window.renderExercises = () => {
