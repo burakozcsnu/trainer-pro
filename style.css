@@ -34,6 +34,36 @@
 .profile-edit-btn {
     align-self: center;
 }
+.section-intro {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.section-intro h2 {
+    font-size: 1.15rem;
+    letter-spacing: -0.025em;
+    margin-top: 0.3rem;
+}
+.section-intro p {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    text-align: right;
+}
+.eyebrow {
+    color: var(--primary);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+}
+.chart-intro {
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+.chart-intro p {
+    max-width: 240px;
+}
 .member-card {
     min-height: 190px;
 }
@@ -606,6 +636,16 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     .member-list-heading { margin-bottom: 0.65rem; }
     .profile-heading p { font-size: 0.78rem; }
     .profile-edit-btn { align-self: stretch; }
+    .section-intro,
+    .chart-intro {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+    .section-intro p {
+        max-width: none;
+        text-align: left;
+    }
     .stat-card { box-shadow: none; }
     .card { box-shadow: none; }
 }
@@ -726,6 +766,9 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 }
 .analytics-sidebar h3 {
     margin: 0;
+}
+.analytics-sidebar select {
+    min-height: 44px;
 }
 .profile-tabs-nav {
     overflow-x: auto;

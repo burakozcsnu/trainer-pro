@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Trainer Pro">
 
-    <link rel="stylesheet" href="style.css?v=1.4.2">
+    <link rel="stylesheet" href="style.css?v=1.4.3">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     </head>
@@ -126,6 +126,13 @@
                 <div class="profile-content-wrapper">
                     <!-- TAB: Gelişim Dashboard -->
                     <div id="tab-analytics" class="tab-content active">
+                        <div class="section-intro">
+                            <div>
+                                <span class="eyebrow">GENEL BAKIŞ</span>
+                                <h2>Gelişim özeti</h2>
+                            </div>
+                            <p>Son ölçüm ve antrenman verilerini tek bakışta takip edin.</p>
+                        </div>
                         <div class="dashboard-stats-grid"
                             style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
                             <div class="stat-card" style="background: rgba(0, 242, 254, 0.05);">
@@ -146,6 +153,13 @@
                             </div>
                         </div>
                         <div class="analytics-container">
+                            <div class="section-intro chart-intro">
+                                <div>
+                                    <span class="eyebrow">İLERLEME</span>
+                                    <h2>Gelişim grafiği</h2>
+                                </div>
+                                <p>Bir parametre seçerek değişimi inceleyin.</p>
+                            </div>
                             <div class="analytics-sidebar">
                                 <h3>Parametreler</h3>
                                                                 <select id="chart-cat" onchange="loadMetricList()">
@@ -666,7 +680,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.3.50"></script>
+    <script src="script.js?v=1.3.51"></script>
 </body>
 
 </html>
