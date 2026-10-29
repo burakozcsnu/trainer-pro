@@ -212,6 +212,7 @@
     // --- NAVIGATION ---
 
     window.nav = (id, saveHistory = true) => {
+        if (typeof window.toggleMobileMenu === 'function') window.toggleMobileMenu(false);
         if (saveHistory) {
             const currentTop = state.navHistory[state.navHistory.length - 1];
             if (currentTop !== id) state.navHistory.push(id);
@@ -220,6 +221,19 @@
         const target = document.getElementById(id);
         if (target) target.classList.add('active');
         refreshAll();
+    };
+
+    window.toggleMobileMenu = (forceOpen) => {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.drawer-overlay');
+        const toggle = document.querySelector('.mobile-menu-toggle');
+        if (!sidebar || !overlay || !toggle) return;
+        const shouldOpen = typeof forceOpen === 'boolean'
+            ? forceOpen
+            : !sidebar.classList.contains('mobile-open');
+        sidebar.classList.toggle('mobile-open', shouldOpen);
+        overlay.classList.toggle('active', shouldOpen);
+        toggle.setAttribute('aria-expanded', String(shouldOpen));
     };
 
     window.goBack = () => {

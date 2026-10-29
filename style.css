@@ -496,6 +496,10 @@ nav { gap: 0.3rem; }
     padding: 0.85rem 2.25rem;
     backdrop-filter: blur(18px);
 }
+.mobile-brand,
+.drawer-overlay {
+    display: none;
+}
 .btn-back, .btn-secondary {
     background: var(--surface-raised);
     color: var(--text-dim);
@@ -897,36 +901,78 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
         flex-direction: column;
     }
     .sidebar {
-        width: 100%;
-        height: auto;
-        flex: 0 0 auto;
-        padding: 0.65rem 0.75rem;
-        border-right: 0;
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 2001;
+        width: min(84vw, 320px);
+        height: 100dvh;
+        padding: 1.25rem 1rem;
+        border-right: 1px solid var(--border-soft);
+        border-bottom: 0;
+        transform: translateX(-105%);
+        transition: transform 180ms ease;
+        box-shadow: var(--shadow-lg);
+    }
+    .sidebar.mobile-open {
+        transform: translateX(0);
+    }
+    .sidebar .logo {
+        display: block;
+        margin-bottom: 1.5rem;
+    }
+    .drawer-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        border: 0;
+        background: rgba(3, 6, 10, 0.62);
+        backdrop-filter: blur(2px);
+    }
+    .drawer-overlay.active {
+        display: block;
+    }
+    .mobile-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.7rem 0.75rem 0.45rem;
+        background: rgba(13, 17, 23, 0.96);
         border-bottom: 1px solid var(--border-soft);
     }
-    .logo {
-        margin: 0 0 0.55rem;
-        padding: 0.25rem 0.4rem;
+    .mobile-logo {
+        color: var(--text);
+        font-size: 1.05rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+    }
+    .mobile-logo span {
+        color: var(--primary);
+    }
+    .mobile-menu-toggle {
+        display: grid;
+        width: 40px;
+        height: 40px;
+        place-items: center;
+        padding: 0;
+        color: var(--text);
+        background: var(--surface-raised);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 1.25rem;
     }
     .sidebar nav {
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         gap: 0.35rem;
-        overflow-x: auto;
-        padding-bottom: 0.15rem;
-        scrollbar-width: none;
-    }
-    .sidebar nav::-webkit-scrollbar {
-        display: none;
+        overflow: visible;
     }
     .nav-btn {
-        flex: 0 0 auto;
         min-height: var(--touch-target);
         padding: 0.65rem 0.75rem;
-        white-space: nowrap;
+        white-space: normal;
     }
     .sidebar-actions {
-        display: none;
+        display: block;
     }
     .content {
         width: 100%;
@@ -934,35 +980,34 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
         overflow-y: auto;
     }
     .global-search-bar {
-        display: none;
-    }
-    .global-search-bar > .btn-back,
-    .global-search-bar > .global-actions {
-        display: none;
+        position: static;
+        min-height: 0;
+        padding: 0.55rem 0.75rem;
+        gap: 0.4rem;
+        align-items: stretch;
+        flex-wrap: nowrap;
     }
     .btn-back {
-        min-width: 60px !important;
-        padding: 0.7rem 0.8rem;
+        display: none;
     }
     .search-main-area {
         min-width: 0;
         max-width: none;
-        flex: 1 1 100%;
-    }
-    .global-actions {
-        display: flex;
-        width: 100%;
-        margin-left: 0;
-        gap: 0.5rem;
-    }
-    .global-actions > button {
         flex: 1;
+        gap: 0.35rem;
+    }
+    .search-main-area input {
+        min-height: 40px;
+        padding: 0.6rem 0.7rem;
+        font-size: 0.82rem;
+    }
+    .btn-filter-toggle {
+        min-height: 40px;
+        padding: 0.45rem 0.65rem;
+        font-size: 0.78rem;
     }
     .global-actions {
-        justify-content: flex-start;
-    }
-    .global-actions .btn-secondary {
-        flex: 0 1 50%;
+        display: none;
     }
     .filters-dropdown {
         left: 0;
@@ -971,7 +1016,7 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     }
     .view {
         max-width: none;
-        padding: 1.25rem 0.75rem;
+        padding: 1rem 0.75rem;
     }
     .view-header {
         align-items: stretch;
