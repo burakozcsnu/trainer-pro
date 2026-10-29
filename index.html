@@ -105,7 +105,12 @@
             <!-- VIEW: Üye Profili -->
             <section id="profile-view" class="view">
                 <div class="view-header">
-                    <h1 id="prof-name">Üye Profili</h1>
+                    <div class="profile-heading">
+                        <span class="eyebrow">DANIŞAN PROFİLİ</span>
+                        <h1 id="prof-name">Üye Profili</h1>
+                        <p id="prof-meta">Profil detaylarını ve gelişimi yönetin.</p>
+                    </div>
+                    <button class="btn-secondary profile-edit-btn" onclick="window.editActiveMember()">Profili düzenle</button>
                 </div>
 
                 <nav class="profile-tabs-nav">
@@ -661,7 +666,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.3.49"></script>
+    <script src="script.js?v=1.3.50"></script>
 </body>
 
 </html>

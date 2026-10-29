@@ -10,6 +10,30 @@
     --sidebar-w: 260px;
     --touch-target: 44px;
 }
+.profile-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.profile-heading .eyebrow {
+    color: var(--primary);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+}
+.profile-heading h1 {
+    margin: 0;
+}
+.profile-heading h1::after {
+    display: none;
+}
+.profile-heading p {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+}
+.profile-edit-btn {
+    align-self: center;
+}
 .member-card {
     min-height: 190px;
 }
@@ -580,6 +604,8 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     .member-overview-card span { font-size: 0.68rem; line-height: 1.2; }
     .member-overview-card strong { font-size: 1.2rem; }
     .member-list-heading { margin-bottom: 0.65rem; }
+    .profile-heading p { font-size: 0.78rem; }
+    .profile-edit-btn { align-self: stretch; }
     .stat-card { box-shadow: none; }
     .card { box-shadow: none; }
 }

@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.49';
+    const APP_VERSION = '1.3.50';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     try {
@@ -2136,7 +2136,14 @@ window.editMeasurement = (id) => {
     window.openProfile = (id) => {
         state.activeMemberId = id;
         const m = state.members.find(x => x.id == id);
-        if (m) document.getElementById('prof-name').innerText = m.ad_soyad;
+        if (m) {
+            document.getElementById('prof-name').innerText = m.ad_soyad;
+            const meta = document.getElementById('prof-meta');
+            if (meta) {
+                const details = [m.brans, m.cinsiyet].filter(Boolean);
+                meta.innerText = details.length ? details.join(' · ') : 'Profil detaylarını ve gelişimi yönetin.';
+            }
+        }
 
         const myM = state.measurements.filter(m => m.member_id == id).sort((a,b) => new Date(b.tarih) - new Date(a.tarih));
         const now = new Date();
@@ -2164,6 +2171,10 @@ window.editMeasurement = (id) => {
             window.nav('profile-view'); window.tab('analytics');
         }
         window.scanStorageForDocs();
+    };
+
+    window.editActiveMember = () => {
+        if (state.activeMemberId) window.editMember(state.activeMemberId);
     };
 
     window.performGlobalSearch = () => {
