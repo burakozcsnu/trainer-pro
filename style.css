@@ -1177,28 +1177,48 @@ body::before {
     border-color: rgba(99, 216, 255, 0.65);
 }
 .card {
-    background: linear-gradient(145deg, #18243a 0%, #121b2d 100%);
+    background: linear-gradient(145deg, #1d3152 0%, #14233d 100%);
+    border-color: rgba(99, 216, 255, 0.34);
+    box-shadow: 0 10px 28px rgba(3, 10, 28, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 .member-overview-card {
-    background: linear-gradient(145deg, #15243b 0%, #101a2d 100%);
+    background: linear-gradient(145deg, #16456a 0%, #122d4e 100%);
+    border-color: rgba(99, 216, 255, 0.46);
+    box-shadow: 0 8px 22px rgba(20, 120, 180, 0.18);
 }
 .member-overview-card:nth-child(2) {
-    background: linear-gradient(145deg, #211d3d 0%, #171a31 100%);
+    background: linear-gradient(145deg, #4a2d78 0%, #2a2055 100%);
+    border-color: rgba(167, 139, 250, 0.52);
+    box-shadow: 0 8px 22px rgba(128, 75, 210, 0.2);
 }
 .member-overview-card:nth-child(3) {
-    background: linear-gradient(145deg, #142f35 0%, #11232d 100%);
+    background: linear-gradient(145deg, #155b58 0%, #123b45 100%);
+    border-color: rgba(110, 231, 183, 0.46);
+    box-shadow: 0 8px 22px rgba(40, 170, 140, 0.18);
 }
 .stat-card:nth-child(1) {
-    background: linear-gradient(145deg, #152b42 0%, #132033 100%) !important;
+    background: linear-gradient(145deg, #15527c 0%, #163658 100%) !important;
+    border-color: rgba(99, 216, 255, 0.5);
 }
 .stat-card:nth-child(2) {
-    background: linear-gradient(145deg, #251f45 0%, #191c35 100%) !important;
+    background: linear-gradient(145deg, #55327f 0%, #32235d 100%) !important;
+    border-color: rgba(167, 139, 250, 0.52);
 }
 .stat-card:nth-child(3) {
-    background: linear-gradient(145deg, #153b3a 0%, #142a30 100%) !important;
+    background: linear-gradient(145deg, #17645c 0%, #17443f 100%) !important;
+    border-color: rgba(110, 231, 183, 0.5);
 }
 .stat-card:nth-child(4) {
-    background: linear-gradient(145deg, #3a2b1d 0%, #29201e 100%) !important;
+    background: linear-gradient(145deg, #85511d 0%, #55331c 100%) !important;
+    border-color: rgba(251, 191, 36, 0.56);
+}
+.member-overview-card span,
+.stat-card span {
+    color: #d7e8f7;
+}
+.member-overview-card strong,
+.stat-card h2 {
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.28);
 }
 .member-overview-card:nth-child(2) strong,
 .stat-card:nth-child(2) h2 {
