@@ -1,0 +1,13 @@
+[2026-04-21 13:51:54] Otomatik worker baslatildi. Her 10 dakikada bir çalisacak.
+[2026-04-21 13:51:54] Görev bulundu, uygulaniyor...
+[2026-04-21 13:51:55] Görev basariyla tamamlandi.
+[2026-04-21 13:51:55] Bekleniyor... Bir sonraki çalisma 10 dakika sonra.
+[2026-04-21 14:01:55] Görev bulundu, uygulaniyor...
+[2026-04-21 14:01:56] Görev basariyla tamamlandi.
+[2026-04-21 14:01:56] Bekleniyor... Bir sonraki çalisma 10 dakika sonra.
+[2026-04-21 14:06:57] Otomatik worker baslatildi. Her 10 dakikada bir çalisacak.
+[2026-04-21 14:06:57] Görev bulundu, uygulaniyor...
+[2026-04-21 14:06:58] Görev basariyla tamamlandi.
+[2026-04-21 14:06:58] Bekleniyor... Bir sonraki çalisma 10 dakika sonra.
+[2026-04-21 14:07:53] Otomatik worker baslatildi. Her 10 dakikada bir çalisacak.
+[2026-04-21 14:07:53] Görev bulundu, uygulaniyor...

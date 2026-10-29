@@ -1,0 +1,102 @@
+# Workflow catalog — common skill chains for a mobile app studio.
+# Used by /help and /start to suggest the next step.
+
+workflows:
+
+  new-project-from-zero:
+    description: "Brand-new mobile app with no prior work"
+    steps:
+      - /start
+      - /brainstorm
+      - /setup-platform
+      - /design-system
+      - /brand-bible        # bundled in design-system, optional
+      - /map-systems
+      - /create-architecture
+      - /ux-design (x key screens)
+      - /prototype
+      - /create-epics
+      - /create-stories
+      - /sprint-plan
+      - /dev-story (loop)
+      - /qa-plan
+      - /store-listing
+      - /store-submit
+      - /ios-release / /android-release
+
+  existing-project-onboarding:
+    description: "Picking up an app that already exists"
+    steps:
+      - /start
+      - /adopt
+      - /project-stage-detect
+      - /setup-platform     # if not set
+      - /design-system retrofit
+      - /architecture-review
+      - /gate-check
+
+  feature-delivery:
+    description: "One feature from PRD to shipped"
+    steps:
+      - /create-stories (for the epic)
+      - /story-readiness
+      - /ux-design
+      - /writing-plans
+      - /dev-story
+      - /test-driven-development (non-trivial logic)
+      - /ui-screenshot-test
+      - /e2e-test (critical flows)
+      - /verification-before-completion
+      - /requesting-code-review
+      - /receiving-code-review
+      - /finishing-a-development-branch
+
+  release-cycle:
+    description: "Cutting a release candidate and shipping both stores"
+    steps:
+      - /release-checklist
+      - /privacy-manifest
+      - /screenshots-generate
+      - /changelog
+      - /patch-notes
+      - /store-submit <version>
+      - /ios-release <version>
+      - /android-release <version>
+      - /live-ops-manager (monitor post-release)
+
+  incident-response:
+    description: "A live release is degrading user experience"
+    steps:
+      - /crash-triage 24h
+      - /systematic-debugging
+      - /hotfix
+      - /incident-response
+      - /retrospective
+
+  growth-experiment:
+    description: "Run a growth / retention A/B test"
+    steps:
+      - /retention-funnel
+      - /ab-test-plan
+      - /feature-flag-plan
+      - /dev-story (implementation)
+      - (run for N weeks)
+      - decision meeting
+
+  aso-cycle:
+    description: "Quarterly ASO refresh"
+    steps:
+      - /aso-optimize <market>
+      - /store-listing <market>
+      - /screenshots-generate
+      - (publish; monitor 30d)
+
+  platform-integration:
+    description: "Add HealthKit / HealthConnect / Widgets / etc."
+    steps:
+      - /team-platform <integration>
+      - /architecture-decision
+      - /privacy-manifest (refresh)
+      - /dev-story
+      - /qa-plan
+      - /release-checklist

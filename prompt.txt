@@ -1,0 +1,19 @@
+Act as an Expert Backend & Data Analyst. Enhance the Trainer Pro SPA (index.html, style.css, script.js) with the following features:
+
+1. Advanced Analytics Logic:
+- In script.js, implement a 'Body Fat Trend Analysis' function that detects if a member's fat percentage is increasing or decreasing over the last 3 measurements and displays a visual indicator (red/green arrow) in the Analytics dashboard.
+- Create a 'Volume Tracker' for workouts, calculating (weight * reps) per exercise and displaying total workout volume in the workout detail modal.
+
+2. PDF Report Generation:
+- Integrate a client-side PDF library (e.g., jsPDF via CDN).
+- Add a 'Rapor Oluştur' (Create Report) button to the Member Profile.
+- The button should generate a PDF summary containing: Member Name, Last 5 Measurements, and a summary of the last 3 Workouts.
+
+3. UI Polish:
+- Enhance the 'Gelişim Dashboard' with more interactive elements.
+- Ensure the PDF export button matches the 'Premium Dark' aesthetic.
+
+4. Performance:
+- Implement basic debounce for the global search to optimize performance.
+
+Keep the 3-file structure. Maintain Turkish UI standards. Ensure Supabase sync remains robust.
