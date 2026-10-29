@@ -29,6 +29,8 @@ async function migrate() {
         ADD COLUMN IF NOT EXISTS boy NUMERIC,
         ADD COLUMN IF NOT EXISTS cinsiyet TEXT,
         ADD COLUMN IF NOT EXISTS kayit_tarihi DATE;
+
+      NOTIFY pgrst, 'reload schema';
     `);
     console.log('Migration successful.');
 

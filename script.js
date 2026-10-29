@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.47';
+    const APP_VERSION = '1.3.48';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     try {
@@ -1539,33 +1539,29 @@
 window.editMeasurement = (id) => {
         const m = state.measurements.find(x => x.id == id);
         if (!m) return;
-        if (!m) return;
+        const setField = (fieldId, value) => {
+            const field = document.getElementById(fieldId);
+            if (field) field.value = value ?? '';
+        };
         document.getElementById('m-modal-title').innerText = 'Ölçümü Düzenle';
-        document.getElementById('m-id').value = m.id;
-        document.getElementById('m-date').value = m.tarih;
-        document.getElementById('m-weight').value = m.weight;
+        setField('m-id', m.id);
+        setField('m-date', m.tarih);
+        setField('m-weight', m.weight);
         const member = state.members.find(memb => memb.id == state.activeMemberId);
-        document.getElementById('m-height-measurement').value = (member && member.boy) ? member.boy : '';
-        document.getElementById('m-fat').value = m.fat || '';
-        document.getElementById('m-waist').value = m.waist || '';
-        document.getElementById('m-chest').value = m.chest || '';
-        document.getElementById('m-neck').value = m.neck || '';
-        document.getElementById('m-l-arm').value = m.l_arm || '';
-        document.getElementById('m-r-arm').value = m.r_arm || '';
-        document.getElementById('m-l-onkol').value = m.sol_onkol || '';
-        document.getElementById('m-r-onkol').value = m.sag_onkol || '';
-        document.getElementById('m-l-bacak').value = m.l_bacak || '';
-        document.getElementById('m-r-bacak').value = m.r_bacak || '';
-        document.getElementById('m-l-kalf').value = m.l_kalf || '';
-        document.getElementById('m-r-kalf').value = m.r_kalf || '';
-        document.getElementById('m-basen').value = m.basen || '';
-        document.getElementById('m-age').value = m.yas || '';
-        document.getElementById('m-rhr').value = m.rhr || '';
-        document.getElementById('m-cooper').value = m.cooper || '';
-        document.getElementById('m-bmr').value = m.bmr || '';
-        document.getElementById('m-mhr').value = m.mhr || '';
-        document.getElementById('m-hrr').value = m.hrr || '';
-        document.getElementById('m-vo2max').value = m.vo2max || '';
+        setField('m-height-measurement', member?.boy);
+        setField('m-fat', m.fat);
+        setField('m-waist', m.waist);
+        setField('m-chest', m.chest);
+        setField('m-neck', m.neck);
+        setField('m-l-arm', m.l_arm);
+        setField('m-r-arm', m.r_arm);
+        setField('m-l-onkol', m.sol_onkol);
+        setField('m-r-onkol', m.sag_onkol);
+        setField('m-l-bacak', m.l_bacak);
+        setField('m-r-bacak', m.r_bacak);
+        setField('m-l-kalf', m.l_kalf);
+        setField('m-r-kalf', m.r_kalf);
+        setField('m-basen', m.basen);
         window.openModal('modal-measurement');
     };
 
