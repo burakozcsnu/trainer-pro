@@ -27,18 +27,19 @@
             return;
         }
         if (role !== 'admin') return;
+        showAuthError('');
+        window.openModal('modal-auth');
+        window.setTimeout(() => document.getElementById('auth-email')?.focus(), 0);
         try {
             const { data, error } = await withAuthTimeout(
                 supabase.auth.getSession(),
                 'Oturum kontrolü zaman aşımına uğradı. İnternet bağlantınızı kontrol edip tekrar deneyin.'
             );
             if (error || !data.session) {
-                window.openModal('modal-auth');
                 return;
             }
             if (!isAdminSession(data.session)) {
                 showAuthError('Bu hesap yönetici yetkisine sahip değil.');
-                window.openModal('modal-auth');
                 return;
             }
             enterAdminPortal();
