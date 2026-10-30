@@ -13,13 +13,25 @@
         const roles = document.getElementById('portal-roles');
         if (roles) roles.hidden = !roles.hidden;
     };
-    window.enterPortal = (role) => {
+    const AUTH_TIMEOUT_MS = 10000;
+    const withAuthTimeout = (promise, message) => Promise.race([
+        promise,
+        new Promise((_, reject) => {
+            window.setTimeout(() => reject(new Error(message)), AUTH_TIMEOUT_MS);
+        })
+    ]);
+
+    window.enterPortal = async (role) => {
         if (role === 'user') {
             alert('Kullanıcı paneli yakında kullanıma açılacaktır.');
             return;
         }
         if (role !== 'admin') return;
-        supabase.auth.getSession().then(({ data, error }) => {
+        try {
+            const { data, error } = await withAuthTimeout(
+                supabase.auth.getSession(),
+                'Oturum kontrolü zaman aşımına uğradı. İnternet bağlantınızı kontrol edip tekrar deneyin.'
+            );
             if (error || !data.session) {
                 window.openModal('modal-auth');
                 return;
@@ -30,7 +42,11 @@
                 return;
             }
             enterAdminPortal();
-        });
+        } catch (error) {
+            handleError(error, 'Admin session check');
+            showAuthError(error.message);
+            window.openModal('modal-auth');
+        }
     };
     const isAdminSession = (session) => session?.user?.app_metadata?.role === 'admin';
     const showAuthError = (message) => {
@@ -59,22 +75,37 @@
     window.handleAdminLogin = async (event) => {
         event.preventDefault();
         const errorElement = document.getElementById('auth-error');
+        const submitButton = event.submitter || event.target.querySelector('button[type="submit"]');
         const email = document.getElementById('auth-email')?.value.trim();
         const password = document.getElementById('auth-password')?.value;
         if (errorElement) errorElement.textContent = '';
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-            showAuthError('E-posta veya şifre hatalı.');
-            return;
+        if (submitButton) submitButton.disabled = true;
+        try {
+            const { error } = await withAuthTimeout(
+                supabase.auth.signInWithPassword({ email, password }),
+                'Giriş işlemi zaman aşımına uğradı. İnternet bağlantınızı kontrol edip tekrar deneyin.'
+            );
+            if (error) {
+                showAuthError('E-posta veya şifre hatalı.');
+                return;
+            }
+            const { data: sessionData } = await withAuthTimeout(
+                supabase.auth.getSession(),
+                'Oturum doğrulaması zaman aşımına uğradı.'
+            );
+            if (!isAdminSession(sessionData.session)) {
+                await supabase.auth.signOut();
+                showAuthError('Bu hesap yönetici yetkisine sahip değil.');
+                return;
+            }
+            window.closeModal('modal-auth');
+            enterAdminPortal();
+        } catch (error) {
+            handleError(error, 'Admin login');
+            showAuthError(error.message);
+        } finally {
+            if (submitButton) submitButton.disabled = false;
         }
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (!isAdminSession(sessionData.session)) {
-            await supabase.auth.signOut();
-            showAuthError('Bu hesap yönetici yetkisine sahip değil.');
-            return;
-        }
-        window.closeModal('modal-auth');
-        enterAdminPortal();
     };
 
     let state = {
@@ -156,6 +187,7 @@
         element.textContent = message;
         element.dataset.status = status;
     };
+    setSyncStatus('offline', 'Yönetici girişi bekleniyor');
 
     // --- CRITICAL DATA SAFETY HELPER ---
     window.safeJSONParse = (data, fallback = null) => {
@@ -173,13 +205,16 @@
 
     window.openModal = (id) => {
         const el = document.getElementById(id);
-        if (el) el.style.display = 'block';
+        if (!el) return;
+        el.style.display = 'block';
+        el.setAttribute('aria-hidden', 'false');
     };
 
     window.closeModal = (id) => {
         const el = document.getElementById(id);
         if (!el) return;
         el.style.display = 'none';
+        el.setAttribute('aria-hidden', 'true');
         if (id === 'modal-new-exercise') {
             document.getElementById('edit-ex-id').value = '';
             document.getElementById('new-ex-name').value = '';
@@ -2360,7 +2395,10 @@ window.editMeasurement = (id) => {
     }
 
     async function sync() {
-        const { data: sessionData } = await supabase.auth.getSession();
+        const { data: sessionData } = await withAuthTimeout(
+            supabase.auth.getSession(),
+            'Oturum kontrolü zaman aşımına uğradı.'
+        );
         if (!sessionData.session) {
             setSyncStatus('offline', 'Yönetici girişi bekleniyor');
             return false;
