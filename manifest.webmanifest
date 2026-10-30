@@ -8,9 +8,9 @@
     "theme_color": "#050505",
     "icons": [
         {
-            "src": "zen-wellness-logo.jpg",
+            "src": "zen-wellness-logo.png",
             "sizes": "1029x768",
-            "type": "image/jpeg",
+            "type": "image/png",
             "purpose": "any"
         }
     ]

@@ -1112,19 +1112,17 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     width: min(62vw, 360px);
     aspect-ratio: 1.34;
     padding: 0;
-    overflow: hidden;
     cursor: pointer;
-    border: 1px solid #777777;
-    border-radius: 22px;
-    background: #111111;
-    box-shadow: 0 0 0 1px #222222, 0 24px 70px rgba(0, 0, 0, 0.8);
+    border: 0;
+    background: transparent;
+    box-shadow: none;
     animation: logo-breathe 2.8s ease-in-out infinite;
 }
 .brand-splash-logo img {
     width: 100%;
     height: 100%;
     display: block;
-    object-fit: cover;
+    object-fit: contain;
 }
 .brand-splash-copy {
     display: grid;
@@ -1232,10 +1230,10 @@ body::before {
     width: 100%;
     max-width: 154px;
     height: 54px;
-    object-fit: cover;
+    object-fit: contain;
     object-position: center;
-    border: 1px solid #555555;
-    border-radius: 8px;
+    border: 0;
+    border-radius: 0;
 }
 .portal-roles[hidden] {
     display: none;
