@@ -45,6 +45,10 @@
             <h2>Yönetici Girişi</h2>
             <p class="auth-copy">Zen Wellness Club yönetim paneline devam etmek için giriş yapın.</p>
             <form onsubmit="window.handleAdminLogin(event)">
+                <div id="auth-name-group" hidden>
+                    <label for="auth-name">Ad Soyad</label>
+                    <input id="auth-name" type="text" autocomplete="name">
+                </div>
                 <label id="auth-identity-label" for="auth-email">E-posta</label>
                 <input id="auth-email" type="email" autocomplete="username" required>
                 <label for="auth-password">Şifre</label>

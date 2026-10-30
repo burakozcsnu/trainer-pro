@@ -29,7 +29,8 @@ async function migrate() {
         ADD COLUMN IF NOT EXISTS boy NUMERIC,
         ADD COLUMN IF NOT EXISTS cinsiyet TEXT,
         ADD COLUMN IF NOT EXISTS kayit_tarihi DATE,
-        ADD COLUMN IF NOT EXISTS auth_user_id UUID UNIQUE;
+        ADD COLUMN IF NOT EXISTS auth_user_id UUID UNIQUE,
+        ADD COLUMN IF NOT EXISTS email TEXT;
 
       NOTIFY pgrst, 'reload schema';
     `);

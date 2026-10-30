@@ -68,6 +68,35 @@ async function migrate() {
       FOR EACH ROW
       EXECUTE FUNCTION public.assign_default_member_role();
 
+      CREATE OR REPLACE FUNCTION public.create_member_profile_for_user()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      SECURITY DEFINER
+      SET search_path = auth, public
+      AS $$
+      BEGIN
+        INSERT INTO public.uyeler (id, ad_soyad, email, auth_user_id, brans, cinsiyet, kayit_tarihi)
+        VALUES (
+          floor(extract(epoch FROM clock_timestamp()) * 1000)::bigint,
+          COALESCE(NEW.raw_user_meta_data ->> 'full_name', split_part(NEW.email, '@', 1)),
+          NEW.email,
+          NEW.id,
+          'Fitness',
+          'Belirtilmedi',
+          CURRENT_DATE
+        )
+        ON CONFLICT (auth_user_id) DO NOTHING;
+        RETURN NEW;
+      END;
+      $$;
+
+      DROP TRIGGER IF EXISTS create_member_profile_for_user ON auth.users;
+      CREATE TRIGGER create_member_profile_for_user
+      AFTER INSERT ON auth.users
+      FOR EACH ROW
+      WHEN (COALESCE(NEW.raw_app_meta_data ->> 'role', 'user') = 'user')
+      EXECUTE FUNCTION public.create_member_profile_for_user();
+
       CREATE POLICY "uyeler_member_read"
       ON uyeler
       FOR SELECT

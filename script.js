@@ -73,6 +73,8 @@
         const label = document.getElementById('auth-identity-label');
         const input = document.getElementById('auth-email');
         const signup = document.getElementById('auth-signup-toggle');
+        const nameGroup = document.getElementById('auth-name-group');
+        const nameInput = document.getElementById('auth-name');
         if (label) label.textContent = 'E-posta';
         if (input) {
             input.type = 'email';
@@ -81,6 +83,8 @@
             input.autocomplete = 'username';
         }
         if (signup) signup.hidden = false;
+        if (nameGroup) nameGroup.hidden = activeAuthMode !== 'signup';
+        if (nameInput) nameInput.required = activeAuthMode === 'signup';
         const copy = document.getElementById('auth-signup-copy');
         if (copy) copy.hidden = activeAuthMode !== 'signup';
     };
@@ -97,6 +101,8 @@
             input.autocomplete = 'username';
         }
         if (signup) signup.hidden = true;
+        if (nameGroup) nameGroup.hidden = true;
+        if (nameInput) nameInput.required = false;
         if (copy) copy.hidden = true;
     };
     window.toggleMemberSignup = () => {
@@ -194,6 +200,7 @@
         const submitButton = event.submitter || event.target.querySelector('button[type="submit"]');
         const identity = document.getElementById('auth-email')?.value.trim();
         const password = document.getElementById('auth-password')?.value;
+        const fullName = document.getElementById('auth-name')?.value.trim();
         if (errorElement) errorElement.textContent = '';
         if (submitButton) submitButton.disabled = true;
         try {
@@ -201,7 +208,10 @@
                 ? supabase.auth.signUp({
                     email: identity,
                     password,
-                    options: { emailRedirectTo: `${window.location.origin}${window.location.pathname}` }
+                    options: {
+                        emailRedirectTo: `${window.location.origin}${window.location.pathname}`,
+                        data: { full_name: fullName }
+                    }
                 })
                 : activeLoginRole === 'admin'
                     ? supabase.auth.signInWithPassword({ email: identity, password })
