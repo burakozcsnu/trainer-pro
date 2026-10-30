@@ -1096,6 +1096,97 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 }
 
 /* Monochrome high-contrast theme */
+.brand-splash {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 1.4rem;
+    background: #050505;
+    color: #ffffff;
+    animation: splash-in 700ms ease both;
+}
+.brand-splash-logo {
+    width: min(62vw, 360px);
+    aspect-ratio: 1.34;
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid #777777;
+    border-radius: 22px;
+    background: #111111;
+    box-shadow: 0 0 0 1px #222222, 0 24px 70px rgba(0, 0, 0, 0.8);
+    animation: logo-breathe 2.8s ease-in-out infinite;
+}
+.brand-splash-logo img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+.brand-splash-copy {
+    display: grid;
+    gap: 0.35rem;
+    text-align: center;
+}
+.brand-splash-copy strong {
+    font-size: clamp(1.25rem, 4vw, 2rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.brand-splash-copy span {
+    color: #a6a6a6;
+    font-size: 0.85rem;
+}
+.portal-roles {
+    display: flex;
+    gap: 0.75rem;
+    animation: roles-in 320ms ease both;
+}
+.portal-role {
+    min-width: 130px;
+    min-height: 48px;
+    padding: 0.7rem 1rem;
+    color: #dddddd;
+    background: #1d1d1d;
+    border: 1px solid #777777;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+}
+.portal-role:hover,
+.portal-role-admin {
+    color: #050505;
+    background: #eeeeee;
+    border-color: #ffffff;
+}
+.brand-splash.is-hidden {
+    pointer-events: none;
+    animation: splash-out 420ms ease forwards;
+}
+.brand-splash.is-hidden .brand-splash-logo,
+.brand-splash.is-hidden .brand-splash-copy,
+.brand-splash.is-hidden .portal-roles {
+    opacity: 0;
+}
+@keyframes splash-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes logo-breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.025); }
+}
+@keyframes roles-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes splash-out {
+    to { opacity: 0; visibility: hidden; }
+}
+
 :root {
     --bg: #050505;
     --surface: #111111;
@@ -1135,6 +1226,19 @@ body::before {
 .logo,
 .mobile-logo {
     color: #ffffff;
+}
+.app-logo {
+    display: block;
+    width: 100%;
+    max-width: 154px;
+    height: 54px;
+    object-fit: cover;
+    object-position: center;
+    border: 1px solid #555555;
+    border-radius: 8px;
+}
+.portal-roles[hidden] {
+    display: none;
 }
 .global-search-bar {
     background: #0b0b0b;

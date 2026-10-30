@@ -1,14 +1,27 @@
 /**
- * Trainer Pro - Expert Architect SPA
+ * Zen Wellness Club - Yönetici SPA
  * Optimized for Batoner Mobile App Studios Standards
  * Version 1.3.35 - Modal Workout Edition
  */
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.52';
+    const APP_VERSION = '1.3.67';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
+    window.showPortalRoles = () => {
+        const roles = document.getElementById('portal-roles');
+        if (roles) roles.hidden = !roles.hidden;
+    };
+    window.enterPortal = (role) => {
+        if (role === 'user') {
+            alert('Kullanıcı paneli yakında kullanıma açılacaktır.');
+            return;
+        }
+        if (role !== 'admin') return;
+        document.body.classList.add('portal-entered');
+        document.getElementById('brand-splash')?.classList.add('is-hidden');
+    };
     try {
         localStorage.setItem('app_version', APP_VERSION);
     } catch(e) {
