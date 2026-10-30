@@ -1216,16 +1216,16 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     --surface: #111111;
     --surface-soft: #181818;
     --surface-raised: #242424;
-    --primary: #63d8ff;
-    --primary-strong: #b9efff;
-    --accent: #c49a72;
-    --text: #f5f5f5;
-    --text-dim: #a6a6a6;
-    --border: #4a4a4a;
-    --border-soft: rgba(210, 210, 210, 0.28);
-    --danger: #d98b86;
-    --success: #8fdbc6;
-    --warning: #e2ba7c;
+    --primary: #e4ba94;
+    --primary-strong: #f1d0ad;
+    --accent: #b98b68;
+    --text: #eee2d8;
+    --text-dim: #b7a69a;
+    --border: #55453a;
+    --border-soft: rgba(228, 186, 148, 0.28);
+    --danger: #c8847d;
+    --success: #c5b08f;
+    --warning: #d5ab7c;
 }
 
 body,
@@ -1234,6 +1234,10 @@ input,
 select,
 textarea {
     font-family: Georgia, "Times New Roman", serif;
+    font-weight: 400;
+}
+body * {
+    font-family: inherit;
 }
 
 body,
@@ -1278,10 +1282,10 @@ body::before {
 }
 .logo-wordmark,
 .mobile-wordmark {
-    color: #63d8ff;
+    color: #e4ba94;
     font-family: Georgia, "Times New Roman", serif;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    font-weight: 600;
+    letter-spacing: 0.045em;
     white-space: nowrap;
 }
 .mobile-wordmark {
@@ -1298,15 +1302,15 @@ body::before {
     border-radius: 0;
 }
 .mobile-logo .mobile-menu-toggle {
-    color: #c49a72;
-    background: rgba(196, 154, 114, 0.12);
-    border-color: rgba(196, 154, 114, 0.55);
+    color: #e4ba94;
+    background: rgba(228, 186, 148, 0.12);
+    border-color: rgba(228, 186, 148, 0.55);
 }
 .mobile-logo:hover .mobile-menu-toggle,
 .mobile-logo:focus-visible .mobile-menu-toggle {
-    color: #f0c69d;
-    border-color: #63d8ff;
-    box-shadow: 0 0 0 3px rgba(99, 216, 255, 0.16);
+    color: #f1d0ad;
+    border-color: #e4ba94;
+    box-shadow: 0 0 0 3px rgba(228, 186, 148, 0.16);
 }
 @media (min-width: 901px) {
     .sidebar .app-logo {
@@ -1336,15 +1340,15 @@ body::before {
 .tab-btn:hover,
 .btn-back:hover,
 .btn-secondary:hover {
-    color: #63d8ff;
+    color: #e4ba94;
     background: #2e2e2e;
-    border-color: #c49a72;
+    border-color: #e4ba94;
 }
 .nav-btn.active,
 .tab-btn.active {
-    color: #63d8ff;
+    color: #e4ba94;
     background: #303030;
-    border-color: #c49a72;
+    border-color: #e4ba94;
 }
 input,
 select,
