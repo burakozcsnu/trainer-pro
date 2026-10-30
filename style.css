@@ -1438,15 +1438,20 @@ select:focus {
     color: #f0f0f0;
     border-color: #777777;
 }
-.delta-positive,
-.measurement-summary-header strong {
-    color: var(--success);
+.delta-positive {
+    color: #35d07f;
+    font-weight: 700;
 }
 .delta-negative {
-    color: var(--danger);
+    color: #ff5b67;
+    font-weight: 700;
 }
 .delta-neutral {
-    color: var(--text-dim);
+    color: #c9bdb3;
+    font-weight: 600;
+}
+.measurement-summary-header strong {
+    color: var(--success);
 }
 .eyebrow,
 .profile-heading .eyebrow,
