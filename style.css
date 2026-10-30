@@ -1101,15 +1101,16 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     --surface: #111111;
     --surface-soft: #181818;
     --surface-raised: #242424;
-    --primary: #f2f2f2;
-    --primary-strong: #ffffff;
-    --accent: #bdbdbd;
+    --primary: #63d8ff;
+    --primary-strong: #b9efff;
+    --accent: #b58cff;
     --text: #f5f5f5;
     --text-dim: #a6a6a6;
     --border: #4a4a4a;
     --border-soft: rgba(210, 210, 210, 0.28);
-    --danger: #d7d7d7;
-    --success: #eeeeee;
+    --danger: #ff8294;
+    --success: #63e6be;
+    --warning: #f7c65a;
 }
 
 body,
@@ -1127,9 +1128,13 @@ body::before {
 .mobile-logo,
 .logo span,
 .mobile-logo span {
-    color: #ffffff;
+    color: var(--primary);
     background: none;
-    -webkit-text-fill-color: #ffffff;
+    -webkit-text-fill-color: currentColor;
+}
+.logo,
+.mobile-logo {
+    color: #ffffff;
 }
 .global-search-bar {
     background: #0b0b0b;
@@ -1153,7 +1158,7 @@ body::before {
 }
 .nav-btn.active,
 .tab-btn.active {
-    color: #ffffff;
+    color: var(--primary-strong);
     background: #303030;
     border-color: #eeeeee;
 }
@@ -1210,8 +1215,16 @@ select:focus {
 .stat-card:nth-child(2) h2,
 .member-overview-card:nth-child(3) strong,
 .stat-card:nth-child(3) h2 {
-    color: #ffffff;
+    color: var(--primary-strong);
     text-shadow: none;
+}
+.member-overview-card:nth-child(2) strong,
+.stat-card:nth-child(2) h2 {
+    color: var(--accent);
+}
+.member-overview-card:nth-child(3) strong,
+.stat-card:nth-child(3) h2 {
+    color: var(--success);
 }
 .btn-primary,
 .fab {
@@ -1238,10 +1251,32 @@ select:focus {
     border-color: #777777;
 }
 .delta-positive,
-.delta-negative,
-.delta-neutral,
 .measurement-summary-header strong {
-    color: #ffffff;
+    color: var(--success);
+}
+.delta-negative {
+    color: var(--danger);
+}
+.delta-neutral {
+    color: var(--text-dim);
+}
+.eyebrow,
+.profile-heading .eyebrow,
+.member-branch,
+.last-perf-hint b {
+    color: var(--primary);
+}
+.tag {
+    color: var(--primary-strong);
+}
+.tag.secondary {
+    color: var(--accent);
+}
+.tag.accent {
+    color: var(--warning);
+}
+.btn-view {
+    color: var(--primary-strong);
 }
 .btn-delete {
     color: #ffffff;
