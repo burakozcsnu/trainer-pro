@@ -239,14 +239,14 @@
     window.toggleMobileMenu = (forceOpen) => {
         const sidebar = document.querySelector('.sidebar');
         const overlay = document.querySelector('.drawer-overlay');
-        const toggle = document.querySelector('.mobile-menu-toggle');
-        if (!sidebar || !overlay || !toggle) return;
+        const toggle = document.querySelector('.mobile-logo');
+        if (!sidebar || !overlay) return;
         const shouldOpen = typeof forceOpen === 'boolean'
             ? forceOpen
             : !sidebar.classList.contains('mobile-open');
         sidebar.classList.toggle('mobile-open', shouldOpen);
         overlay.classList.toggle('active', shouldOpen);
-        toggle.setAttribute('aria-expanded', String(shouldOpen));
+        if (toggle) toggle.setAttribute('aria-expanded', String(shouldOpen));
     };
 
     window.goBack = () => {
