@@ -1110,6 +1110,36 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
+@media (max-width: 360px) {
+    .global-search-bar {
+        gap: 0.3rem;
+        padding-inline: 0.55rem;
+    }
+    .btn-back {
+        min-width: 60px !important;
+        padding-inline: 0.4rem;
+        font-size: 0.7rem;
+    }
+    .search-main-area {
+        gap: 0.25rem;
+    }
+    .search-main-area input {
+        padding-inline: 0.45rem;
+        font-size: 0.68rem;
+    }
+    .btn-filter-toggle {
+        padding-inline: 0.3rem;
+        font-size: 0.62rem;
+    }
+    .global-actions {
+        gap: 0.3rem;
+    }
+    .global-actions > button {
+        width: 52px;
+        padding-inline: 0.2rem;
+        font-size: 0.6rem;
+    }
+}
 
 /* Monochrome high-contrast theme */
 .brand-splash {
