@@ -10,6 +10,7 @@
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
+    let activeAuthMode = 'login';
     window.showPortalRoles = () => {
         const roles = document.getElementById('portal-roles');
         if (roles) roles.hidden = !roles.hidden;
@@ -25,14 +26,18 @@
     window.enterPortal = async (role) => {
         if (role === 'user') {
             activeLoginRole = 'user';
+            activeAuthMode = 'login';
             document.querySelector('#modal-auth h2').textContent = 'Danışan Girişi';
             document.querySelector('#modal-auth .auth-copy').textContent =
                 'Zen Wellness Club gelişim panelinize devam etmek için giriş yapın.';
+            configureUserAuthForm();
         } else if (role === 'admin') {
             activeLoginRole = 'admin';
+            activeAuthMode = 'login';
             document.querySelector('#modal-auth h2').textContent = 'Yönetici Girişi';
             document.querySelector('#modal-auth .auth-copy').textContent =
                 'Zen Wellness Club yönetim paneline devam etmek için giriş yapın.';
+            configureAdminAuthForm();
         } else {
             return;
         }
@@ -63,6 +68,49 @@
             showAuthError(error.message);
             window.openModal('modal-auth');
         }
+    };
+    const configureUserAuthForm = () => {
+        const label = document.getElementById('auth-identity-label');
+        const input = document.getElementById('auth-email');
+        const signup = document.getElementById('auth-signup-toggle');
+        if (label) label.textContent = 'Cep telefonu';
+        if (input) {
+            input.type = 'tel';
+            input.placeholder = '+905xxxxxxxxx';
+            input.pattern = '^\\+[1-9]\\d{7,14}$';
+            input.autocomplete = 'tel';
+        }
+        if (signup) signup.hidden = false;
+        const copy = document.getElementById('auth-signup-copy');
+        if (copy) copy.hidden = activeAuthMode !== 'signup';
+    };
+    const configureAdminAuthForm = () => {
+        const label = document.getElementById('auth-identity-label');
+        const input = document.getElementById('auth-email');
+        const signup = document.getElementById('auth-signup-toggle');
+        const copy = document.getElementById('auth-signup-copy');
+        if (label) label.textContent = 'E-posta';
+        if (input) {
+            input.type = 'email';
+            input.placeholder = '';
+            input.removeAttribute('pattern');
+            input.autocomplete = 'username';
+        }
+        if (signup) signup.hidden = true;
+        if (copy) copy.hidden = true;
+    };
+    window.toggleMemberSignup = () => {
+        if (activeLoginRole !== 'user') return;
+        activeAuthMode = activeAuthMode === 'signup' ? 'login' : 'signup';
+        const title = document.querySelector('#modal-auth h2');
+        const submit = document.querySelector('#modal-auth button[type="submit"]');
+        const toggle = document.getElementById('auth-signup-toggle');
+        const copy = document.getElementById('auth-signup-copy');
+        if (title) title.textContent = activeAuthMode === 'signup' ? 'Danışan Kaydı' : 'Danışan Girişi';
+        if (submit) submit.textContent = activeAuthMode === 'signup' ? 'Kayıt Ol' : 'Giriş Yap';
+        if (toggle) toggle.textContent = activeAuthMode === 'signup' ? 'Giriş Yap' : 'Kayıt Ol';
+        if (copy) copy.hidden = activeAuthMode !== 'signup';
+        showAuthError('');
     };
     const isAdminSession = (session) => session?.user?.app_metadata?.role === 'admin';
     const isMemberSession = (session) => session?.user?.app_metadata?.role === 'user';
@@ -138,17 +186,28 @@
         event.preventDefault();
         const errorElement = document.getElementById('auth-error');
         const submitButton = event.submitter || event.target.querySelector('button[type="submit"]');
-        const email = document.getElementById('auth-email')?.value.trim();
+        const identity = document.getElementById('auth-email')?.value.trim();
         const password = document.getElementById('auth-password')?.value;
         if (errorElement) errorElement.textContent = '';
         if (submitButton) submitButton.disabled = true;
         try {
-            const { error } = await withAuthTimeout(
-                supabase.auth.signInWithPassword({ email, password }),
-                'Giriş işlemi zaman aşımına uğradı. İnternet bağlantınızı kontrol edip tekrar deneyin.'
+            const authRequest = activeAuthMode === 'signup'
+                ? supabase.auth.signUp({ phone: identity, password })
+                : activeLoginRole === 'admin'
+                    ? supabase.auth.signInWithPassword({ email: identity, password })
+                    : supabase.auth.signInWithPassword({ phone: identity, password });
+            const { data: authData, error } = await withAuthTimeout(
+                authRequest,
+                activeAuthMode === 'signup'
+                    ? 'Kayıt işlemi zaman aşımına uğradı.'
+                    : 'Giriş işlemi zaman aşımına uğradı. İnternet bağlantınızı kontrol edip tekrar deneyin.'
             );
             if (error) {
-                showAuthError('E-posta veya şifre hatalı.');
+                showAuthError(error.message || 'Kimlik bilgileri geçersiz.');
+                return;
+            }
+            if (activeAuthMode === 'signup' && !authData.session) {
+                showAuthError('Kayıt oluşturuldu. Telefon doğrulaması gerekiyorsa SMS kodunu tamamlayın; ardından giriş yapın.');
                 return;
             }
             const { data: sessionData } = await withAuthTimeout(

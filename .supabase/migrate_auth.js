@@ -43,6 +43,31 @@ async function migrate() {
       `);
     }
     await client.query(`
+      CREATE OR REPLACE FUNCTION public.assign_default_member_role()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      SECURITY DEFINER
+      SET search_path = auth, public
+      AS $$
+      BEGIN
+        IF COALESCE(NEW.raw_app_meta_data, '{}'::jsonb) ->> 'role' IS NULL THEN
+          NEW.raw_app_meta_data := jsonb_set(
+            COALESCE(NEW.raw_app_meta_data, '{}'::jsonb),
+            '{role}',
+            '"user"'::jsonb,
+            true
+          );
+        END IF;
+        RETURN NEW;
+      END;
+      $$;
+
+      DROP TRIGGER IF EXISTS assign_default_member_role ON auth.users;
+      CREATE TRIGGER assign_default_member_role
+      BEFORE INSERT ON auth.users
+      FOR EACH ROW
+      EXECUTE FUNCTION public.assign_default_member_role();
+
       CREATE POLICY "uyeler_member_read"
       ON uyeler
       FOR SELECT
