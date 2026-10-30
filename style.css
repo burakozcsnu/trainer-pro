@@ -1269,6 +1269,39 @@ body,
 .content {
     background: #050505;
 }
+.sync-status {
+    position: fixed;
+    top: 0.65rem;
+    right: 0.75rem;
+    z-index: 999998;
+    padding: 0.3rem 0.6rem;
+    color: #e4ba94;
+    background: rgba(15, 12, 10, 0.88);
+    border: 1px solid rgba(228, 186, 148, 0.35);
+    border-radius: 999px;
+    font-size: 0.68rem;
+    pointer-events: none;
+    transition: color 180ms ease, border-color 180ms ease;
+}
+.sync-status[data-status="syncing"] {
+    color: #e4ba94;
+}
+.sync-status[data-status="online"] {
+    color: #35d07f;
+    border-color: rgba(53, 208, 127, 0.45);
+}
+.sync-status[data-status="offline"],
+.sync-status[data-status="error"] {
+    color: #ff5b67;
+    border-color: rgba(255, 91, 103, 0.5);
+}
+@media (max-width: 360px) {
+    .sync-status {
+        right: 0.4rem;
+        padding-inline: 0.4rem;
+        font-size: 0.58rem;
+    }
+}
 body::before {
     background: none;
 }

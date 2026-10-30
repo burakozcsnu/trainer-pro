@@ -110,6 +110,13 @@
         console.error(`[${context}] Error:`, err);
     };
 
+    const setSyncStatus = (status, message) => {
+        const element = document.getElementById('sync-status');
+        if (!element) return;
+        element.textContent = message;
+        element.dataset.status = status;
+    };
+
     // --- CRITICAL DATA SAFETY HELPER ---
     window.safeJSONParse = (data, fallback = null) => {
         if (!data) return fallback;
@@ -2313,6 +2320,11 @@ window.editMeasurement = (id) => {
     }
 
     async function sync() {
+        if (!navigator.onLine) {
+            setSyncStatus('offline', 'Çevrimdışı · Son veriler gösteriliyor');
+            return false;
+        }
+        setSyncStatus('syncing', 'Senkronize ediliyor...');
         try {
 
             const results = await Promise.all([
@@ -2383,9 +2395,16 @@ window.editMeasurement = (id) => {
 
 
             refreshAll();
+            setSyncStatus('online', 'Senkronize edildi');
+            window.setTimeout(() => {
+                if (navigator.onLine) setSyncStatus('online', 'Çevrimiçi');
+            }, 1800);
+            return true;
         } catch (error) {
             console.error("SYNC CATCH BLOCK:", error);
-            alert("Senkronizasyon hatası! Konsolu kontrol edin.");
+            setSyncStatus('error', 'Senkronizasyon başarısız · Yeniden deneniyor');
+            scheduleRealtimeReconnect();
+            return false;
         }
     }
 
@@ -2441,8 +2460,12 @@ window.editMeasurement = (id) => {
         subscribeToRealtime();
 
         window.addEventListener('online', () => {
+            setSyncStatus('syncing', 'Bağlantı geri geldi · Senkronize ediliyor...');
             subscribeToRealtime();
             scheduleRealtimeSync('browser-online');
+        });
+        window.addEventListener('offline', () => {
+            setSyncStatus('offline', 'Çevrimdışı · Son veriler gösteriliyor');
         });
 
         document.addEventListener('visibilitychange', () => {
