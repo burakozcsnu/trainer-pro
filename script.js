@@ -9,6 +9,7 @@
     const APP_VERSION = '1.3.70';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
+    let activeLoginRole = 'admin';
     window.showPortalRoles = () => {
         const roles = document.getElementById('portal-roles');
         if (roles) roles.hidden = !roles.hidden;
@@ -23,10 +24,18 @@
 
     window.enterPortal = async (role) => {
         if (role === 'user') {
-            alert('Kullanıcı paneli yakında kullanıma açılacaktır.');
+            activeLoginRole = 'user';
+            document.querySelector('#modal-auth h2').textContent = 'Danışan Girişi';
+            document.querySelector('#modal-auth .auth-copy').textContent =
+                'Zen Wellness Club gelişim panelinize devam etmek için giriş yapın.';
+        } else if (role === 'admin') {
+            activeLoginRole = 'admin';
+            document.querySelector('#modal-auth h2').textContent = 'Yönetici Girişi';
+            document.querySelector('#modal-auth .auth-copy').textContent =
+                'Zen Wellness Club yönetim paneline devam etmek için giriş yapın.';
+        } else {
             return;
         }
-        if (role !== 'admin') return;
         showAuthError('');
         window.openModal('modal-auth');
         window.setTimeout(() => document.getElementById('auth-email')?.focus(), 0);
@@ -38,11 +47,17 @@
             if (error || !data.session) {
                 return;
             }
-            if (!isAdminSession(data.session)) {
-                showAuthError('Bu hesap yönetici yetkisine sahip değil.');
+            const validSession = activeLoginRole === 'admin'
+                ? isAdminSession(data.session)
+                : isMemberSession(data.session);
+            if (!validSession) {
+                showAuthError(activeLoginRole === 'admin'
+                    ? 'Bu hesap yönetici yetkisine sahip değil.'
+                    : 'Bu hesap danışan yetkisine sahip değil.');
                 return;
             }
-            enterAdminPortal();
+            if (activeLoginRole === 'admin') enterAdminPortal();
+            else enterMemberPortal();
         } catch (error) {
             handleError(error, 'Admin session check');
             showAuthError(error.message);
@@ -50,6 +65,7 @@
         }
     };
     const isAdminSession = (session) => session?.user?.app_metadata?.role === 'admin';
+    const isMemberSession = (session) => session?.user?.app_metadata?.role === 'user';
     const showAuthError = (message) => {
         const errorElement = document.getElementById('auth-error');
         if (errorElement) errorElement.textContent = message;
@@ -59,10 +75,18 @@
         document.getElementById('brand-splash')?.classList.add('is-hidden');
         init();
     };
+    const enterMemberPortal = () => {
+        document.getElementById('brand-splash')?.classList.add('is-hidden');
+        document.getElementById('app-wrapper')?.setAttribute('hidden', '');
+        document.getElementById('member-portal')?.removeAttribute('hidden');
+        loadMemberPortal();
+    };
     const exitAdminPortal = () => {
         document.body.classList.remove('portal-entered');
         document.getElementById('brand-splash')?.classList.remove('is-hidden');
         document.getElementById('portal-roles').hidden = true;
+        document.getElementById('app-wrapper')?.removeAttribute('hidden');
+        document.getElementById('member-portal')?.setAttribute('hidden', '');
         window.closeModal('modal-auth');
         setSyncStatus('offline', 'Yönetici girişi bekleniyor');
         if (realtimeChannel) {
@@ -93,7 +117,7 @@
             exitAdminPortal();
             return;
         }
-        if (event === 'TOKEN_REFRESHED' && !isAdminSession(session)) {
+        if (event === 'TOKEN_REFRESHED' && !isAdminSession(session) && !isMemberSession(session)) {
             exitAdminPortal();
         }
     });
@@ -131,13 +155,19 @@
                 supabase.auth.getSession(),
                 'Oturum doğrulaması zaman aşımına uğradı.'
             );
-            if (!isAdminSession(sessionData.session)) {
+            const validSession = activeLoginRole === 'admin'
+                ? isAdminSession(sessionData.session)
+                : isMemberSession(sessionData.session);
+            if (!validSession) {
                 await supabase.auth.signOut();
-                showAuthError('Bu hesap yönetici yetkisine sahip değil.');
+                showAuthError(activeLoginRole === 'admin'
+                    ? 'Bu hesap yönetici yetkisine sahip değil.'
+                    : 'Bu hesap danışan yetkisine sahip değil.');
                 return;
             }
             window.closeModal('modal-auth');
-            enterAdminPortal();
+            if (activeLoginRole === 'admin') enterAdminPortal();
+            else enterMemberPortal();
         } catch (error) {
             handleError(error, 'Admin login');
             showAuthError(error.message);
@@ -152,6 +182,93 @@
         activeMemberId: null, undoStack: [], navHistory: ['members-view'],
         surveyAnswers: {}, currentStep: 0, measurementRequired: false
     };
+
+    const escapePortalText = (value) => String(value ?? '--')
+        .replace(/[&<>"']/g, character => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[character]));
+
+    const renderMemberPortal = ({ member, measurements, workouts, diets, documents }) => {
+        const sortedMeasurements = [...measurements].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
+        const sortedWorkouts = [...workouts].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
+        const sortedDiets = [...diets].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
+        const latest = sortedMeasurements[0];
+        const metrics = [
+            ['Kilo', latest?.weight, 'kg'],
+            ['Yağ oranı', latest?.fat, '%'],
+            ['Göğüs', latest?.chest, 'cm'],
+            ['Bel', latest?.waist, 'cm']
+        ];
+        const content = document.getElementById('member-portal-content');
+        if (!content) return;
+        content.innerHTML = `
+            <section class="member-portal-card">
+                <p class="member-portal-muted">Hoş geldiniz</p>
+                <h1>${escapePortalText(member.ad_soyad)}</h1>
+                <p class="member-portal-muted">${latest ? `Son ölçüm: ${escapePortalText(latest.tarih)}` : 'Henüz ölçüm kaydı bulunmuyor.'}</p>
+            </section>
+            <div class="member-portal-grid" style="margin-top:1rem">
+                <section class="member-portal-card">
+                    <h2>📊 Son ölçüm</h2>
+                    <div class="member-portal-grid">
+                        ${metrics.map(([label, value, unit]) => `
+                            <div><span class="member-portal-muted">${label}</span><h3>${escapePortalText(value)} ${unit}</h3></div>
+                        `).join('')}
+                    </div>
+                </section>
+                <section class="member-portal-card">
+                    <h2>🏋️ Antrenman geçmişi</h2>
+                    ${sortedWorkouts.length ? `<ul class="member-portal-list">${sortedWorkouts.slice(0, 10).map(workout => `
+                        <li><strong>${escapePortalText(workout.sablon || 'Antrenman')}</strong><br>
+                        <span class="member-portal-muted">${escapePortalText(workout.tarih)}</span></li>
+                    `).join('')}</ul>` : '<p class="member-portal-muted">Henüz antrenman kaydı bulunmuyor.</p>'}
+                </section>
+                <section class="member-portal-card">
+                    <h2>🍏 Beslenme planları</h2>
+                    ${sortedDiets.length ? `<ul class="member-portal-list">${sortedDiets.map(diet => `
+                        <li><strong>${escapePortalText(diet.plan_adi || 'Beslenme planı')}</strong><br>
+                        <span class="member-portal-muted">${escapePortalText(diet.tarih)}</span></li>
+                    `).join('')}</ul>` : '<p class="member-portal-muted">Henüz beslenme planı bulunmuyor.</p>'}
+                </section>
+                <section class="member-portal-card">
+                    <h2>📄 Belgeler</h2>
+                    ${documents.length ? `<ul class="member-portal-list">${documents.map(document => `
+                        <li><strong>${escapePortalText(document.adi || 'Belge')}</strong><br>
+                        <span class="member-portal-muted">${escapePortalText(document.tip)}</span></li>
+                    `).join('')}</ul>` : '<p class="member-portal-muted">Henüz belge bulunmuyor.</p>'}
+                </section>
+            </div>`;
+    };
+
+    async function loadMemberPortal() {
+        const status = document.getElementById('member-portal-status');
+        if (status) status.textContent = 'Veriler yükleniyor...';
+        try {
+            const [memberResult, measurementsResult, workoutsResult, dietsResult, documentsResult] = await Promise.all([
+                supabase.from('uyeler').select('*'),
+                supabase.from('olcumler').select('*'),
+                supabase.from('antrenmanlar').select('*'),
+                supabase.from('beslenme_planlari').select('*'),
+                supabase.from('dokumanlar').select('*')
+            ]);
+            const result = [memberResult, measurementsResult, workoutsResult, dietsResult, documentsResult]
+                .find(item => item.error);
+            if (result?.error) throw result.error;
+            const member = memberResult.data?.[0];
+            if (!member) throw new Error('Bu kullanıcı herhangi bir danışan profiline bağlanmamış.');
+            renderMemberPortal({
+                member,
+                measurements: measurementsResult.data || [],
+                workouts: workoutsResult.data || [],
+                diets: dietsResult.data || [],
+                documents: documentsResult.data || []
+            });
+            if (status) status.textContent = 'Salt okunur danışan paneli';
+        } catch (error) {
+            handleError(error, 'Member portal load');
+            if (status) status.textContent = `Panel yüklenemedi: ${error.message}`;
+        }
+    }
 
     let workoutTimer = null;
     let seconds = 0;

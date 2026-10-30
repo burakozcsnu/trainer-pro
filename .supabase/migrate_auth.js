@@ -32,6 +32,7 @@ async function migrate() {
       await client.query(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY;`);
       await client.query(`DROP POLICY IF EXISTS "${table}_authenticated_access" ON ${table};`);
       await client.query(`DROP POLICY IF EXISTS "${table}_admin_access" ON ${table};`);
+      await client.query(`DROP POLICY IF EXISTS "${table}_member_read" ON ${table};`);
       await client.query(`
         CREATE POLICY "${table}_admin_access"
         ON ${table}
@@ -41,6 +42,53 @@ async function migrate() {
         WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
       `);
     }
+    await client.query(`
+      CREATE POLICY "uyeler_member_read"
+      ON uyeler
+      FOR SELECT
+      TO authenticated
+      USING (auth.uid() = auth_user_id);
+
+      CREATE POLICY "olcumler_member_read"
+      ON olcumler
+      FOR SELECT
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = olcumler.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
+
+      CREATE POLICY "antrenmanlar_member_read"
+      ON antrenmanlar
+      FOR SELECT
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = antrenmanlar.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
+
+      CREATE POLICY "dokumanlar_member_read"
+      ON dokumanlar
+      FOR SELECT
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = dokumanlar.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
+
+      CREATE POLICY "beslenme_planlari_member_read"
+      ON beslenme_planlari
+      FOR SELECT
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = beslenme_planlari.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
+    `);
     await client.query(`NOTIFY pgrst, 'reload schema';`);
     console.log('Admin-only RLS policies enabled.');
   } catch (error) {
