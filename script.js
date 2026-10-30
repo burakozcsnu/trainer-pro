@@ -24,8 +24,18 @@
                 window.openModal('modal-auth');
                 return;
             }
+            if (!isAdminSession(data.session)) {
+                showAuthError('Bu hesap yönetici yetkisine sahip değil.');
+                window.openModal('modal-auth');
+                return;
+            }
             enterAdminPortal();
         });
+    };
+    const isAdminSession = (session) => session?.user?.app_metadata?.role === 'admin';
+    const showAuthError = (message) => {
+        const errorElement = document.getElementById('auth-error');
+        if (errorElement) errorElement.textContent = message;
     };
     const enterAdminPortal = () => {
         document.body.classList.add('portal-entered');
@@ -54,7 +64,13 @@
         if (errorElement) errorElement.textContent = '';
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
-            if (errorElement) errorElement.textContent = 'E-posta veya şifre hatalı.';
+            showAuthError('E-posta veya şifre hatalı.');
+            return;
+        }
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!isAdminSession(sessionData.session)) {
+            await supabase.auth.signOut();
+            showAuthError('Bu hesap yönetici yetkisine sahip değil.');
             return;
         }
         window.closeModal('modal-auth');

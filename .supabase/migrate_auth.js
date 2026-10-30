@@ -31,17 +31,18 @@ async function migrate() {
     for (const table of tables) {
       await client.query(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY;`);
       await client.query(`DROP POLICY IF EXISTS "${table}_authenticated_access" ON ${table};`);
+      await client.query(`DROP POLICY IF EXISTS "${table}_admin_access" ON ${table};`);
       await client.query(`
-        CREATE POLICY "${table}_authenticated_access"
+        CREATE POLICY "${table}_admin_access"
         ON ${table}
         FOR ALL
         TO authenticated
-        USING (true)
-        WITH CHECK (true);
+        USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
+        WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
       `);
     }
     await client.query(`NOTIFY pgrst, 'reload schema';`);
-    console.log('Authenticated RLS policies enabled.');
+    console.log('Admin-only RLS policies enabled.');
   } catch (error) {
     console.error('Auth migration failed:', error);
     process.exitCode = 1;
