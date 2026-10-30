@@ -325,8 +325,8 @@
         const myW = state.workouts.filter(w => w.member_id == state.activeMemberId);
         const myD = state.diets.filter(d => d.member_id == state.activeMemberId).sort((a,b)=>new Date(b.tarih)-new Date(a.tarih));
 
-        document.getElementById('stat-weight').innerText = myM.length > 0 ? `${myM[0].weight} kg` : '--';
-        document.getElementById('stat-fat').innerText = myM.length > 0 ? `%${myM[0].fat}` : '--';
+        document.getElementById('stat-weight').innerText = myM.length > 0 && myM[0].weight != null ? `${myM[0].weight} kg` : '--';
+        document.getElementById('stat-fat').innerText = myM.length > 0 && myM[0].fat != null ? `%${myM[0].fat}` : '--';
         document.getElementById('stat-workouts').innerText = myW.length;
 
         if (myD.length > 0) {
@@ -386,7 +386,11 @@
         const cat = document.getElementById('chart-cat').value;
         const metric = document.getElementById('chart-sub-cat').value;
         const chartCanvas = document.getElementById('mainChart');
-        if(!chartCanvas || !metric) return;
+        const description = document.getElementById('chart-description');
+        if (!chartCanvas || !metric) {
+            if (description) description.innerText = 'Bir parametre seçerek değişimi inceleyin.';
+            return;
+        }
 
         const ctx = chartCanvas.getContext('2d');
         let labels = [], data = [], chartDeltas = [];
@@ -420,17 +424,32 @@
             });
         }
 
-        if(chartObj) chartObj.destroy();
+        if (chartObj) chartObj.destroy();
         const measurementField = MEASUREMENT_FIELDS.find(field => field.key === metric);
         const chartUnit = measurementField?.unit || '';
         const chartLabel = measurementField?.label || metric.toUpperCase();
+        const validPoints = data.filter(value => Number.isFinite(value)).length;
+        const latestDelta = chartDeltas.length ? chartDeltas[chartDeltas.length - 1] : null;
+        if (description) {
+            description.innerText = validPoints === 0
+                ? `${chartLabel} için henüz veri bulunmuyor.`
+                : `${validPoints} kayıt · ${latestDelta === null ? 'İlk kayıt' : `Son değişim: ${formatDelta(latestDelta, chartUnit)}`}`;
+        }
+        const pointColors = chartDeltas.map(delta => {
+            if (delta === null || delta === 0) return '#e4ba94';
+            return delta > 0 ? '#35d07f' : '#ff5b67';
+        });
 
         chartObj = new Chart(ctx, {
             type: 'line',
-            data: { labels, datasets: [{ label: chartLabel, data, borderColor: '#00f2fe', tension: 0.4, fill: true, backgroundColor: 'rgba(0, 242, 254, 0.1)' }] },
+            data: { labels, datasets: [{ label: chartLabel, data, borderColor: '#e4ba94', pointBackgroundColor: pointColors, pointBorderColor: '#050505', pointRadius: 4, tension: 0.4, fill: true, backgroundColor: 'rgba(228, 186, 148, 0.12)' }] },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: '#b7a69a' }, grid: { color: 'rgba(228, 186, 148, 0.08)' } },
+                    y: { ticks: { color: '#b7a69a' }, grid: { color: 'rgba(228, 186, 148, 0.08)' } }
+                },
                 plugins: {
                     tooltip: {
                         callbacks: {
