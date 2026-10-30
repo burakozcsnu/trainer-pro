@@ -45,6 +45,7 @@ jobs:
           }
           node .supabase/migrate.js
           node .supabase/migrate_nutrition.js
+          node .supabase/migrate_auth.js
 
   deploy:
     needs: migrate-database

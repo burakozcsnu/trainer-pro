@@ -1295,6 +1295,23 @@ body,
     color: #ff5b67;
     border-color: rgba(255, 91, 103, 0.5);
 }
+.auth-card {
+    max-width: 420px;
+}
+.auth-card form {
+    display: grid;
+    gap: 0.65rem;
+}
+.auth-copy {
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+}
+.auth-error {
+    min-height: 1.1rem;
+    margin: 0;
+    color: #ff5b67;
+    font-size: 0.8rem;
+}
 @media (max-width: 360px) {
     .sync-status {
         right: 0.4rem;

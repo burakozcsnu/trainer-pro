@@ -19,8 +19,18 @@
             return;
         }
         if (role !== 'admin') return;
+        supabase.auth.getSession().then(({ data, error }) => {
+            if (error || !data.session) {
+                window.openModal('modal-auth');
+                return;
+            }
+            enterAdminPortal();
+        });
+    };
+    const enterAdminPortal = () => {
         document.body.classList.add('portal-entered');
         document.getElementById('brand-splash')?.classList.add('is-hidden');
+        init();
     };
     try {
         localStorage.setItem('app_version', APP_VERSION);
@@ -36,6 +46,20 @@
     };
 
     const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+    window.handleAdminLogin = async (event) => {
+        event.preventDefault();
+        const errorElement = document.getElementById('auth-error');
+        const email = document.getElementById('auth-email')?.value.trim();
+        const password = document.getElementById('auth-password')?.value;
+        if (errorElement) errorElement.textContent = '';
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+            if (errorElement) errorElement.textContent = 'E-posta veya şifre hatalı.';
+            return;
+        }
+        window.closeModal('modal-auth');
+        enterAdminPortal();
+    };
 
     let state = {
         members: [], exercises: [], programs: [], measurements: [], workouts: [], documents: [], cloudFiles: [],
@@ -2320,6 +2344,11 @@ window.editMeasurement = (id) => {
     }
 
     async function sync() {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
+            setSyncStatus('offline', 'Yönetici girişi bekleniyor');
+            return false;
+        }
         if (!navigator.onLine) {
             setSyncStatus('offline', 'Çevrimdışı · Son veriler gösteriliyor');
             return false;
@@ -2455,7 +2484,10 @@ window.editMeasurement = (id) => {
 
     window.sync = sync;
 
+    let initialized = false;
     async function init() {
+        if (initialized) return;
+        initialized = true;
         await sync();
         subscribeToRealtime();
 
@@ -2483,5 +2515,4 @@ window.editMeasurement = (id) => {
         document.body.appendChild(fab);
     }
 
-    init();
 });
