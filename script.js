@@ -1193,14 +1193,19 @@
         const latest = myM[0];
         const previous = myM[1] || null;
         if (summaryContainer) {
-            const summaryFields = MEASUREMENT_FIELDS.slice(0, 4);
+            const summaryFields = MEASUREMENT_FIELDS.filter(field =>
+                ['weight', 'fat', 'waist', 'chest', 'l_arm', 'l_bacak'].includes(field.key)
+            );
+            const comparisonLabel = previous
+                ? `Önceki ölçüm: ${new Date(previous.tarih).toLocaleDateString('tr-TR')}`
+                : 'Karşılaştırma için sonraki ölçümü bekliyor';
             summaryContainer.innerHTML = `
                 <div class="measurement-summary-header">
                     <div>
                         <span class="summary-label">Son ölçüm</span>
                         <strong>${new Date(latest.tarih).toLocaleDateString('tr-TR')}</strong>
                     </div>
-                    <span class="summary-label">${previous ? 'Önceki ölçüme göre' : 'İlk kayıt'}</span>
+                    <span class="summary-label">${comparisonLabel}</span>
                 </div>
                 <div class="measurement-summary-grid">
                     ${summaryFields.map(field => {
@@ -1213,6 +1218,11 @@
                         </div>`;
                     }).join('')}
                 </div>
+                <p class="measurement-summary-note">
+                    ${previous
+                        ? 'Değişimler bir önceki ölçümle karşılaştırılır.'
+                        : 'Bu danışan için ilk ölçüm kaydıdır; değişim değerleri sonraki kayıtta oluşacaktır.'}
+                </p>
             `;
         }
 
