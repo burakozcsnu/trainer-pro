@@ -124,12 +124,14 @@
         init();
     };
     const enterMemberPortal = () => {
+        document.body.classList.add('member-portal-active');
         document.getElementById('brand-splash')?.classList.add('is-hidden');
         document.getElementById('app-wrapper')?.setAttribute('hidden', '');
         document.getElementById('member-portal')?.removeAttribute('hidden');
         loadMemberPortal();
     };
     const exitAdminPortal = () => {
+        document.body.classList.remove('member-portal-active');
         document.body.classList.remove('portal-entered');
         document.getElementById('brand-splash')?.classList.remove('is-hidden');
         document.getElementById('portal-roles').hidden = true;
@@ -165,6 +167,10 @@
             exitAdminPortal();
             return;
         }
+        if (event === 'SIGNED_IN' && window.location.hash.includes('access_token') && session) {
+            if (isMemberSession(session)) enterMemberPortal();
+            else if (isAdminSession(session)) enterAdminPortal();
+        }
         if (event === 'TOKEN_REFRESHED' && !isAdminSession(session) && !isMemberSession(session)) {
             exitAdminPortal();
         }
@@ -192,7 +198,11 @@
         if (submitButton) submitButton.disabled = true;
         try {
             const authRequest = activeAuthMode === 'signup'
-                ? supabase.auth.signUp({ email: identity, password })
+                ? supabase.auth.signUp({
+                    email: identity,
+                    password,
+                    options: { emailRedirectTo: `${window.location.origin}${window.location.pathname}` }
+                })
                 : activeLoginRole === 'admin'
                     ? supabase.auth.signInWithPassword({ email: identity, password })
                     : supabase.auth.signInWithPassword({ email: identity, password });
@@ -207,7 +217,7 @@
                 return;
             }
             if (activeAuthMode === 'signup' && !authData.session) {
-                showAuthError('Kayıt oluşturuldu. Telefon doğrulaması gerekiyorsa SMS kodunu tamamlayın; ardından giriş yapın.');
+                showAuthError('Kayıt oluşturuldu. E-posta kutunuzu doğrulayın; ardından giriş yapın.');
                 return;
             }
             const { data: sessionData } = await withAuthTimeout(
@@ -261,13 +271,13 @@
         const content = document.getElementById('member-portal-content');
         if (!content) return;
         content.innerHTML = `
-            <section class="member-portal-card">
+            <section class="member-portal-card member-portal-section" data-portal-section="overview">
                 <p class="member-portal-muted">Hoş geldiniz</p>
                 <h1>${escapePortalText(member.ad_soyad)}</h1>
                 <p class="member-portal-muted">${latest ? `Son ölçüm: ${escapePortalText(latest.tarih)}` : 'Henüz ölçüm kaydı bulunmuyor.'}</p>
             </section>
             <div class="member-portal-grid" style="margin-top:1rem">
-                <section class="member-portal-card">
+                <section class="member-portal-card member-portal-section" data-portal-section="measurements">
                     <h2>📊 Son ölçüm</h2>
                     <div class="member-portal-grid">
                         ${metrics.map(([label, value, unit]) => `
@@ -275,21 +285,21 @@
                         `).join('')}
                     </div>
                 </section>
-                <section class="member-portal-card">
+                <section class="member-portal-card member-portal-section" data-portal-section="workouts">
                     <h2>🏋️ Antrenman geçmişi</h2>
                     ${sortedWorkouts.length ? `<ul class="member-portal-list">${sortedWorkouts.slice(0, 10).map(workout => `
                         <li><strong>${escapePortalText(workout.sablon || 'Antrenman')}</strong><br>
                         <span class="member-portal-muted">${escapePortalText(workout.tarih)}</span></li>
                     `).join('')}</ul>` : '<p class="member-portal-muted">Henüz antrenman kaydı bulunmuyor.</p>'}
                 </section>
-                <section class="member-portal-card">
+                <section class="member-portal-card member-portal-section" data-portal-section="nutrition">
                     <h2>🍏 Beslenme planları</h2>
                     ${sortedDiets.length ? `<ul class="member-portal-list">${sortedDiets.map(diet => `
                         <li><strong>${escapePortalText(diet.plan_adi || 'Beslenme planı')}</strong><br>
                         <span class="member-portal-muted">${escapePortalText(diet.tarih)}</span></li>
                     `).join('')}</ul>` : '<p class="member-portal-muted">Henüz beslenme planı bulunmuyor.</p>'}
                 </section>
-                <section class="member-portal-card">
+                <section class="member-portal-card member-portal-section" data-portal-section="documents">
                     <h2>📄 Belgeler</h2>
                     ${documents.length ? `<ul class="member-portal-list">${documents.map(document => `
                         <li><strong>${escapePortalText(document.adi || 'Belge')}</strong><br>
@@ -297,14 +307,27 @@
                     `).join('')}</ul>` : '<p class="member-portal-muted">Henüz belge bulunmuyor.</p>'}
                 </section>
             </div>`;
+        window.selectMemberPortalTab('overview');
+    };
+
+    window.selectMemberPortalTab = (tab) => {
+        document.querySelectorAll('[data-portal-section]').forEach(section => {
+            section.hidden = section.dataset.portalSection !== tab;
+        });
+        document.querySelectorAll('[data-portal-tab]').forEach(button => {
+            button.classList.toggle('active', button.dataset.portalTab === tab);
+        });
     };
 
     async function loadMemberPortal() {
         const status = document.getElementById('member-portal-status');
         if (status) status.textContent = 'Veriler yükleniyor...';
         try {
+            const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError || !sessionData.session) throw new Error('Oturum bulunamadı.');
+            const userId = sessionData.session.user.id;
             const [memberResult, measurementsResult, workoutsResult, dietsResult, documentsResult] = await Promise.all([
-                supabase.from('uyeler').select('*'),
+                supabase.from('uyeler').select('*').eq('auth_user_id', userId).maybeSingle(),
                 supabase.from('olcumler').select('*'),
                 supabase.from('antrenmanlar').select('*'),
                 supabase.from('beslenme_planlari').select('*'),
@@ -313,7 +336,7 @@
             const result = [memberResult, measurementsResult, workoutsResult, dietsResult, documentsResult]
                 .find(item => item.error);
             if (result?.error) throw result.error;
-            const member = memberResult.data?.[0];
+            const member = memberResult.data;
             if (!member) throw new Error('Bu kullanıcı herhangi bir danışan profiline bağlanmamış.');
             renderMemberPortal({
                 member,
