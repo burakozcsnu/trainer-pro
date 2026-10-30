@@ -73,12 +73,12 @@
         const label = document.getElementById('auth-identity-label');
         const input = document.getElementById('auth-email');
         const signup = document.getElementById('auth-signup-toggle');
-        if (label) label.textContent = 'Cep telefonu';
+        if (label) label.textContent = 'E-posta';
         if (input) {
-            input.type = 'tel';
-            input.placeholder = '+905xxxxxxxxx';
-            input.pattern = '^\\+[1-9]\\d{7,14}$';
-            input.autocomplete = 'tel';
+            input.type = 'email';
+            input.placeholder = '';
+            input.removeAttribute('pattern');
+            input.autocomplete = 'username';
         }
         if (signup) signup.hidden = false;
         const copy = document.getElementById('auth-signup-copy');
@@ -192,10 +192,10 @@
         if (submitButton) submitButton.disabled = true;
         try {
             const authRequest = activeAuthMode === 'signup'
-                ? supabase.auth.signUp({ phone: identity, password })
+                ? supabase.auth.signUp({ email: identity, password })
                 : activeLoginRole === 'admin'
                     ? supabase.auth.signInWithPassword({ email: identity, password })
-                    : supabase.auth.signInWithPassword({ phone: identity, password });
+                    : supabase.auth.signInWithPassword({ email: identity, password });
             const { data: authData, error } = await withAuthTimeout(
                 authRequest,
                 activeAuthMode === 'signup'
