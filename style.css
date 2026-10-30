@@ -964,30 +964,12 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
         text-transform: uppercase;
     }
     .mobile-logo-mark {
-        position: relative;
         flex: 0 0 72px;
         width: 72px;
         height: 58px;
     }
     .mobile-logo span {
         color: var(--primary);
-    }
-    .mobile-menu-toggle {
-        display: grid;
-        position: absolute;
-        top: 50%;
-        left: -0.25rem;
-        z-index: 1;
-        transform: translateY(-50%);
-        width: 34px;
-        height: 34px;
-        place-items: center;
-        padding: 0;
-        color: var(--text);
-        background: var(--surface-raised);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        font-size: 1.25rem;
     }
     .sidebar nav {
         display: flex;
@@ -1301,16 +1283,9 @@ body::before {
     border: 0;
     border-radius: 0;
 }
-.mobile-logo .mobile-menu-toggle {
-    color: #e4ba94;
-    background: rgba(228, 186, 148, 0.12);
-    border-color: rgba(228, 186, 148, 0.55);
-}
-.mobile-logo:hover .mobile-menu-toggle,
-.mobile-logo:focus-visible .mobile-menu-toggle {
-    color: #f1d0ad;
-    border-color: #e4ba94;
-    box-shadow: 0 0 0 3px rgba(228, 186, 148, 0.16);
+.mobile-logo:hover .app-logo,
+.mobile-logo:focus-visible .app-logo {
+    filter: brightness(1.12);
 }
 @media (min-width: 901px) {
     .sidebar .app-logo {
