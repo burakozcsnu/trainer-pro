@@ -917,7 +917,9 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
         transform: translateX(0);
     }
     .sidebar .logo {
-        display: block;
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
         margin-bottom: 1.5rem;
     }
     .drawer-overlay {
@@ -946,22 +948,39 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
         display: flex;
         align-items: center;
         gap: 0.55rem;
+        justify-content: flex-start;
         color: var(--text);
         min-width: 0;
         width: 100%;
+        border: 0;
+        padding: 0;
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
         font-family: Georgia, "Times New Roman", serif;
         font-size: 1.08rem;
         font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
     }
+    .mobile-logo-mark {
+        position: relative;
+        flex: 0 0 72px;
+        width: 72px;
+        height: 58px;
+    }
     .mobile-logo span {
         color: var(--primary);
     }
     .mobile-menu-toggle {
         display: grid;
-        width: 42px;
-        height: 42px;
+        position: absolute;
+        top: 50%;
+        left: -0.25rem;
+        z-index: 1;
+        transform: translateY(-50%);
+        width: 34px;
+        height: 34px;
         place-items: center;
         padding: 0;
         color: var(--text);
@@ -1199,14 +1218,22 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     --surface-raised: #242424;
     --primary: #63d8ff;
     --primary-strong: #b9efff;
-    --accent: #b58cff;
+    --accent: #c49a72;
     --text: #f5f5f5;
     --text-dim: #a6a6a6;
     --border: #4a4a4a;
     --border-soft: rgba(210, 210, 210, 0.28);
-    --danger: #ff8294;
-    --success: #63e6be;
-    --warning: #f7c65a;
+    --danger: #d98b86;
+    --success: #8fdbc6;
+    --warning: #e2ba7c;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+    font-family: Georgia, "Times New Roman", serif;
 }
 
 body,
@@ -1237,16 +1264,28 @@ body::before {
     align-items: center;
     gap: 0.45rem;
 }
+.mobile-logo {
+    appearance: none;
+    -webkit-appearance: none;
+}
+.mobile-logo-mark .app-logo {
+    width: 72px;
+    height: 58px;
+}
+.sidebar .logo {
+    display: flex;
+    align-items: center;
+}
 .logo-wordmark,
 .mobile-wordmark {
-    color: #d0d0d0;
+    color: #63d8ff;
     font-family: Georgia, "Times New Roman", serif;
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
     white-space: nowrap;
 }
 .mobile-wordmark {
-    font-size: 0.9rem;
+    font-size: clamp(0.82rem, 3.8vw, 1.1rem);
 }
 .app-logo {
     display: block;
@@ -1257,6 +1296,17 @@ body::before {
     object-position: center;
     border: 0;
     border-radius: 0;
+}
+.mobile-logo .mobile-menu-toggle {
+    color: #c49a72;
+    background: rgba(196, 154, 114, 0.12);
+    border-color: rgba(196, 154, 114, 0.55);
+}
+.mobile-logo:hover .mobile-menu-toggle,
+.mobile-logo:focus-visible .mobile-menu-toggle {
+    color: #f0c69d;
+    border-color: #63d8ff;
+    box-shadow: 0 0 0 3px rgba(99, 216, 255, 0.16);
 }
 @media (min-width: 901px) {
     .sidebar .app-logo {
@@ -1280,21 +1330,21 @@ body::before {
 .btn-back,
 .btn-secondary,
 .btn-undo {
-    color: #cfcfcf;
+    color: #d8c6b6;
 }
 .nav-btn:hover,
 .tab-btn:hover,
 .btn-back:hover,
 .btn-secondary:hover {
-    color: #ffffff;
+    color: #63d8ff;
     background: #2e2e2e;
-    border-color: #ffffff;
+    border-color: #c49a72;
 }
 .nav-btn.active,
 .tab-btn.active {
-    color: var(--primary-strong);
+    color: #63d8ff;
     background: #303030;
-    border-color: #eeeeee;
+    border-color: #c49a72;
 }
 input,
 select,
