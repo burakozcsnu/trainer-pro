@@ -409,7 +409,13 @@ canvas#mainChart {
     .close { top: 0.65rem; right: 0.75rem; font-size: 1.75rem; }
     .modal-content h2 { padding-right: 2rem; font-size: 1.25rem; }
     .checkbox-grid { grid-template-columns: 1fr; }
-    .fab { width: 52px; height: 52px; right: 1rem; bottom: 1rem; font-size: 1.5rem; }
+    .fab {
+        width: 52px;
+        height: 52px;
+        right: 1rem;
+        bottom: calc(1rem + env(safe-area-inset-bottom));
+        font-size: 1.5rem;
+    }
 
     input, select, button { font-size: 16px; }
     button, .btn-primary, .btn-secondary, .btn-delete, .btn-view { min-height: var(--touch-target); }
@@ -906,7 +912,8 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
         z-index: 2001;
         width: min(84vw, 320px);
         height: 100dvh;
-        padding: 1.25rem 1rem;
+        padding: calc(1.25rem + env(safe-area-inset-top)) 1rem
+            calc(1.25rem + env(safe-area-inset-bottom));
         border-right: 1px solid var(--border-soft);
         border-bottom: 0;
         transform: translateX(-105%);
@@ -940,7 +947,8 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
         z-index: 30;
         align-items: center;
         gap: 0.55rem;
-        padding: 0.55rem 0.75rem 0.4rem;
+        min-height: 58px;
+        padding: calc(0.55rem + env(safe-area-inset-top)) 0.75rem 0.4rem;
         background: rgba(13, 17, 23, 0.96);
         border-bottom: 1px solid var(--border-soft);
     }
@@ -992,7 +1000,7 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     }
     .global-search-bar {
         position: sticky;
-        top: 58px;
+        top: calc(58px + env(safe-area-inset-top));
         min-height: 56px;
         padding: 0.55rem 0.75rem;
         margin-bottom: 0;
@@ -1050,7 +1058,7 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     }
     .view {
         max-width: none;
-        padding: 2rem 0.75rem 1rem;
+        padding: 2rem 0.75rem calc(1rem + env(safe-area-inset-bottom));
     }
     .view-header {
         align-items: stretch;
