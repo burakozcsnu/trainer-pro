@@ -1268,6 +1268,7 @@ body::before {
     font-family: Georgia, "Times New Roman", serif;
     font-weight: 600;
     letter-spacing: 0.045em;
+    text-transform: uppercase;
     white-space: nowrap;
 }
 .mobile-wordmark {
@@ -1294,6 +1295,11 @@ body::before {
     }
     .sidebar .logo-wordmark {
         font-size: 0.8rem;
+    }
+}
+@media (max-width: 900px) {
+    .sidebar .logo-wordmark {
+        font-size: clamp(1rem, 4vw, 1.1rem);
     }
 }
 .portal-roles[hidden] {
