@@ -19,7 +19,7 @@
     <meta name="apple-mobile-web-app-title" content="Zen Wellness Club">
     <link rel="apple-touch-icon" href="zen-wellness-icon.png?v=1.0">
 
-    <link rel="stylesheet" href="style.css?v=1.9.2">
+    <link rel="stylesheet" href="style.css?v=1.9.3">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     </head>
@@ -43,8 +43,10 @@
     <div class="app-wrapper">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="logo"><img class="app-logo" src="zen-wellness-logo.png?v=1.0"
-                    alt="Zen Wellness Club"></div>
+            <div class="logo">
+                <img class="app-logo" src="zen-wellness-logo.png?v=1.0" alt="Zen Wellness Club">
+                <span class="logo-wordmark">Wellness Club</span>
+            </div>
             <nav>
                 <button onclick="nav('members-view')" class="nav-btn active" id="btn-members">👥
                     <span>Üyeler</span></button>
@@ -63,10 +65,12 @@
 
         <main class="content">
             <div class="mobile-brand">
-                <button class="mobile-menu-toggle" type="button" aria-label="Ana menüyü aç" aria-expanded="false"
-                    onclick="toggleMobileMenu()">☰</button>
-                <div class="mobile-logo"><img class="app-logo" src="zen-wellness-logo.png?v=1.0"
-                        alt="Zen Wellness Club"></div>
+                <div class="mobile-logo">
+                    <button class="mobile-menu-toggle" type="button" aria-label="Ana menüyü aç" aria-expanded="false"
+                        onclick="toggleMobileMenu()">☰</button>
+                    <img class="app-logo" src="zen-wellness-logo.png?v=1.0" alt="Zen Wellness Club">
+                    <span class="mobile-wordmark">Wellness Club</span>
+                </div>
             </div>
             <!-- GLOBAL SEARCH BAR -->
             <div class="global-search-bar">
@@ -700,7 +704,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.3.67"></script>
+    <script src="script.js?v=1.3.70"></script>
 </body>
 
 </html>
