@@ -1244,7 +1244,7 @@
                         <button class="btn-delete" onclick="event.stopPropagation(); window.deleteMeasurement(${m.id})">🗑</button>
                     </div>
                 </div>
-                <p>Kilo: ${m.weight}kg | Yağ: %${m.fat}</p>
+                <p>Kilo: ${m.weight ?? '--'}kg | Yağ: %${m.fat ?? '--'}</p>
                 <div class="measurement-deltas">${deltaHtml}</div>
             </div>
         `;
