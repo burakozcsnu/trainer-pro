@@ -59,6 +59,21 @@
         document.getElementById('brand-splash')?.classList.add('is-hidden');
         init();
     };
+    const exitAdminPortal = () => {
+        document.body.classList.remove('portal-entered');
+        document.getElementById('brand-splash')?.classList.remove('is-hidden');
+        document.getElementById('portal-roles').hidden = true;
+        window.closeModal('modal-auth');
+        setSyncStatus('offline', 'Yönetici girişi bekleniyor');
+        if (realtimeChannel) {
+            realtimeChannel.unsubscribe();
+            realtimeChannel = null;
+        }
+        window.clearTimeout(realtimeSyncTimer);
+        window.clearTimeout(realtimeReconnectTimer);
+        document.querySelector('.fab')?.remove();
+        initialized = false;
+    };
     try {
         localStorage.setItem('app_version', APP_VERSION);
     } catch(e) {
@@ -73,6 +88,28 @@
     };
 
     const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+    supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT') {
+            exitAdminPortal();
+            return;
+        }
+        if (event === 'TOKEN_REFRESHED' && !isAdminSession(session)) {
+            exitAdminPortal();
+        }
+    });
+    window.handleAdminLogout = async () => {
+        try {
+            const { error } = await withAuthTimeout(
+                supabase.auth.signOut(),
+                'Çıkış işlemi zaman aşımına uğradı.'
+            );
+            if (error) throw error;
+            exitAdminPortal();
+        } catch (error) {
+            handleError(error, 'Admin logout');
+            alert('Çıkış yapılamadı. Lütfen tekrar deneyin.');
+        }
+    };
     window.handleAdminLogin = async (event) => {
         event.preventDefault();
         const errorElement = document.getElementById('auth-error');
