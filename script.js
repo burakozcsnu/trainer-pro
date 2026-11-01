@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.94';
+    const APP_VERSION = '1.3.95';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -341,7 +341,7 @@
         return { registration, subscription };
     }
 
-    async function updateMemberNotificationStatus() {
+    async function updateMemberNotificationStatus(pushEnabled = false) {
         const status = document.getElementById('member-notification-status');
         if (!status) return;
         const actions = status.closest('.member-portal-notification')?.querySelector('.member-notification-actions');
@@ -357,6 +357,10 @@
         if (Notification.permission !== 'granted') {
             status.textContent = 'Bildirimleri etkinleştir düğmesine basarak izin verin.';
             return;
+        }
+        if (pushEnabled) {
+            status.textContent = 'Push bildirimleri aktif: 1 gün ve 1 saat önce hatırlatılacaksınız.';
+            if (enableButton) enableButton.hidden = true;
         }
         try {
             const registration = await navigator.serviceWorker.ready;
@@ -374,13 +378,13 @@
         }
     }
 
-    async function startMemberNotifications(member, schedules) {
+    async function startMemberNotifications(member, schedules, pushEnabled) {
         memberNotificationMember = member;
         memberNotificationSchedules = schedules;
         window.clearInterval(memberNotificationTimer);
         memberNotificationTimer = window.setInterval(checkMemberNotifications, 30000);
         checkMemberNotifications();
-        await updateMemberNotificationStatus();
+        await updateMemberNotificationStatus(pushEnabled);
     }
 
     window.enableMemberNotifications = async () => {
@@ -399,7 +403,7 @@
             return;
         }
         if (status) {
-            await updateMemberNotificationStatus();
+            await updateMemberNotificationStatus(true);
         }
     };
 
@@ -417,7 +421,7 @@
         checkMemberNotifications();
     };
 
-    const renderMemberPortal = ({ member, measurements, workouts, diets, documents, schedules }) => {
+    const renderMemberPortal = ({ member, measurements, workouts, diets, documents, schedules, pushEnabled }) => {
         const sortedMeasurements = [...measurements].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
         const sortedWorkouts = [...workouts].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
         const sortedDiets = [...diets].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
@@ -439,9 +443,9 @@
                 <p class="member-portal-muted">${latest ? `Son ölçüm: ${escapePortalText(latest.tarih)}` : 'Henüz ölçüm kaydı bulunmuyor.'}</p>
                 <div class="member-portal-notification">
                     <strong>Seans hatırlatmaları</strong>
-                    <span id="member-notification-status">24 saat ve 1 saat önce bildirim almak için izin verin.</span>
+                    <span id="member-notification-status">${pushEnabled ? 'Push bildirimleri aktif: 1 gün ve 1 saat önce hatırlatılacaksınız.' : '24 saat ve 1 saat önce bildirim almak için izin verin.'}</span>
                     <div class="member-notification-actions">
-                        <button class="btn-secondary" type="button" onclick="window.enableMemberNotifications()">Bildirimleri etkinleştir</button>
+                        <button class="btn-secondary" type="button" ${pushEnabled ? 'hidden' : ''} onclick="window.enableMemberNotifications()">Bildirimleri etkinleştir</button>
                         <button class="btn-secondary" type="button" onclick="window.sendTestNotification()">Test bildirimi</button>
                     </div>
                 </div>
@@ -522,7 +526,7 @@
                 </section>
             </div>`;
         window.selectMemberPortalTab('overview');
-        startMemberNotifications(member, sortedSchedules);
+        startMemberNotifications(member, sortedSchedules, pushEnabled);
     };
 
     window.selectMemberPortalTab = (tab) => {
@@ -738,14 +742,15 @@
             if (!member) throw new Error('Bu kullanıcı henüz aktif bir danışan profiline bağlanmamış. Lütfen antrenörünüzden sizi sisteme dahil etmesini isteyin.');
 
             // Sonra o member'in ID'siyle güvenli bir şekilde filtreleyerek sadece ONUN verilerini çek
-            const [measurementsResult, workoutsResult, dietsResult, documentsResult, schedulesResult] = await Promise.all([
+            const [measurementsResult, workoutsResult, dietsResult, documentsResult, schedulesResult, pushResult] = await Promise.all([
                 supabase.from('olcumler').select('*').eq('member_id', member.id),
                 supabase.from('antrenmanlar').select('*').eq('member_id', member.id),
                 supabase.from('beslenme_planlari').select('*').eq('member_id', member.id),
                 supabase.from('dokumanlar').select('*').eq('member_id', member.id),
-                supabase.from('weekly_program_schedule').select('*').eq('member_id', member.id)
+                supabase.from('weekly_program_schedule').select('*').eq('member_id', member.id),
+                supabase.from('push_subscriptions').select('id').eq('member_id', member.id).limit(1)
             ]);
-            const result = [measurementsResult, workoutsResult, dietsResult, documentsResult]
+            const result = [measurementsResult, workoutsResult, dietsResult, documentsResult, schedulesResult, pushResult]
                 .find(item => item.error);
             if (result?.error) throw result.error;
 
@@ -782,7 +787,8 @@
                 workouts: workoutsResult.data || [],
                 diets: dietsResult.data || [],
                 documents: documentsResult.data || [],
-                schedules: schedulesResult.data || []
+                schedules: schedulesResult.data || [],
+                pushEnabled: (pushResult.data || []).length > 0
             });
             if (!member.degerlendirme_tamamlandi) window.showMemberAssessment(member);
             if (status) status.textContent = 'Salt okunur danışan paneli';
