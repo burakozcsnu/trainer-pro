@@ -43,9 +43,21 @@ async function migrate() {
         ADD COLUMN IF NOT EXISTS degerlendirme_tamamlandi BOOLEAN NOT NULL DEFAULT false,
         ADD COLUMN IF NOT EXISTS degerlendirme_tarihi TIMESTAMPTZ;
 
+      CREATE TABLE IF NOT EXISTS trainers (
+        id TEXT PRIMARY KEY,
+        full_name TEXT NOT NULL,
+        active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      INSERT INTO trainers (id, full_name)
+      VALUES ('burak-ozcan', 'Burak Özcan')
+      ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name;
+
       CREATE TABLE IF NOT EXISTS weekly_program_schedule (
         id BIGINT PRIMARY KEY,
         member_id BIGINT NOT NULL REFERENCES uyeler(id) ON DELETE CASCADE,
+        trainer_id TEXT NOT NULL DEFAULT 'burak-ozcan' REFERENCES trainers(id),
         day_of_week SMALLINT NOT NULL CHECK (day_of_week BETWEEN 1 AND 7),
         start_time TIME NOT NULL,
         end_time TIME,
@@ -55,6 +67,24 @@ async function migrate() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         UNIQUE (member_id, day_of_week, start_time)
       );
+      ALTER TABLE weekly_program_schedule
+        ADD COLUMN IF NOT EXISTS trainer_id TEXT;
+      UPDATE weekly_program_schedule
+        SET trainer_id = 'burak-ozcan'
+        WHERE trainer_id IS NULL;
+      ALTER TABLE weekly_program_schedule
+        ALTER COLUMN trainer_id SET DEFAULT 'burak-ozcan',
+        ALTER COLUMN trainer_id SET NOT NULL;
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'weekly_program_schedule_trainer_id_fkey'
+        ) THEN
+          ALTER TABLE weekly_program_schedule
+            ADD CONSTRAINT weekly_program_schedule_trainer_id_fkey
+            FOREIGN KEY (trainer_id) REFERENCES trainers(id);
+        END IF;
+      END $$;
 
       CREATE TABLE IF NOT EXISTS push_subscriptions (
         id BIGINT PRIMARY KEY,

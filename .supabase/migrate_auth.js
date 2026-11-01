@@ -28,7 +28,8 @@ const tables = [
   'push_reminder_deliveries',
   'schedule_notifications',
   'schedule_attendance',
-  'workout_completions'
+  'workout_completions',
+  'trainers'
 ];
 
 async function migrate() {

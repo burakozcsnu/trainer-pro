@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.102';
+    const APP_VERSION = '1.3.103';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -2238,21 +2238,29 @@
         renderScheduleRows(rows);
     };
 
-    const scheduleFilters = { memberId: '', branch: '' };
+    const scheduleTrainers = [{ id: 'burak-ozcan', full_name: 'Burak Özcan' }];
+    const scheduleFilters = { memberId: '', trainerId: '', branch: '' };
 
     window.applyScheduleFilters = () => {
         scheduleFilters.memberId = document.getElementById('schedule-filter-member')?.value || '';
+        scheduleFilters.trainerId = document.getElementById('schedule-filter-trainer')?.value || '';
         scheduleFilters.branch = document.getElementById('schedule-filter-branch')?.value || '';
         renderWeeklySchedule();
     };
 
     function renderScheduleFilters() {
         const memberSelect = document.getElementById('schedule-filter-member');
+        const trainerSelect = document.getElementById('schedule-filter-trainer');
         const branchSelect = document.getElementById('schedule-filter-branch');
         if (memberSelect) {
             memberSelect.innerHTML = '<option value="">Tümü</option>' +
                 state.members.map(member => `<option value="${member.id}">${escapePortalText(member.ad_soyad)}</option>`).join('');
             memberSelect.value = scheduleFilters.memberId;
+        }
+        if (trainerSelect) {
+            trainerSelect.innerHTML = '<option value="">Tümü</option>' +
+                scheduleTrainers.map(trainer => `<option value="${trainer.id}">${escapePortalText(trainer.full_name)}</option>`).join('');
+            trainerSelect.value = scheduleFilters.trainerId;
         }
         if (branchSelect) {
             branchSelect.innerHTML = '<option value="">Tümü</option>' +
@@ -2267,6 +2275,7 @@
         renderScheduleFilters();
         const entries = (state.schedules || []).filter(item =>
             (!scheduleFilters.memberId || String(item.member_id) === String(scheduleFilters.memberId)) &&
+            (!scheduleFilters.trainerId || String(item.trainer_id || 'burak-ozcan') === String(scheduleFilters.trainerId)) &&
             (!scheduleFilters.branch || item.branch === scheduleFilters.branch)
         );
         const conflictIds = getScheduleConflictIds(state.schedules || []);
@@ -2393,7 +2402,8 @@
             day_of_week: Number(row.querySelector('[data-schedule-day]').value),
             start_time: row.querySelector('[data-schedule-start]').value,
             end_time: row.querySelector('[data-schedule-end]').value,
-            branch: row.querySelector('[data-schedule-branch]').value
+            branch: row.querySelector('[data-schedule-branch]').value,
+            trainer_id: 'burak-ozcan'
         }));
         if (!rows.length || rows.some(row => !isValidScheduleTime(row.start_time) || !isValidScheduleTime(row.end_time))) {
             alert('Lütfen her seans için gün, başlangıç ve bitiş saati seçin.');
@@ -2417,6 +2427,7 @@
         }
         const baseData = {
             member_id: memberId,
+            trainer_id: 'burak-ozcan',
             notes: document.getElementById('schedule-notes').value.trim(),
             updated_at: new Date().toISOString()
         };
