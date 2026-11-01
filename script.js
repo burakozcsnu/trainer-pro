@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.86';
+    const APP_VERSION = '1.3.87';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -250,7 +250,7 @@
     };
 
     let state = {
-        members: [], exercises: [], programs: [], measurements: [], workouts: [], documents: [], cloudFiles: [],
+        members: [], exercises: [], programs: [], measurements: [], workouts: [], documents: [], schedules: [], cloudFiles: [],
         foods: [], diets: [],
         activeMemberId: null, undoStack: [], navHistory: ['members-view'],
         surveyAnswers: {}, currentStep: 0, measurementRequired: false,
@@ -627,6 +627,7 @@
         'olcumler',
         'antrenmanlar',
         'dokumanlar',
+        'weekly_program_schedule',
         'master_egzersizler',
         'master_besinler',
         'beslenme_planlari'
@@ -1754,6 +1755,7 @@
     function refreshAll() {
         try {
             renderMembers();
+            renderWeeklySchedule();
             renderAssessmentAdmin();
             renderWorkoutHistory();
             renderMeasurementHistory();
@@ -1825,7 +1827,13 @@
         }
 
         const icons = { 'Fitness': '💪', 'Karate': '🥋', 'Basketbol': '🏀', 'Yoga': '🧘', 'Fonksiyonel Egzersiz': '⚡' };
-        grid.innerHTML = state.members.length ? state.members.map(m => `
+        grid.innerHTML = state.members.length ? state.members.map(m => {
+            const memberSchedule = state.schedules.filter(item => item.member_id == m.id)
+                .sort((a, b) => a.day_of_week - b.day_of_week || a.start_time.localeCompare(b.start_time));
+            const scheduleText = memberSchedule.length
+                ? memberSchedule.slice(0, 2).map(item => `${getScheduleDayName(item.day_of_week)} ${item.start_time.slice(0, 5)}`).join(' · ')
+                : 'Henüz seans atanmadı';
+            return `
             <div class="card member-card" onclick="window.openProfile(${m.id})">
                 <div class="member-card-top">
                     <div class="member-avatar">${icons[m.brans] || '👤'}</div>
@@ -1833,13 +1841,115 @@
                 </div>
                 <h3>${m.ad_soyad}</h3>
                 <p class="member-branch">${m.brans || 'Branş belirtilmemiş'}</p>
+                <p class="member-schedule-summary">🗓️ ${escapePortalText(scheduleText)}</p>
                 <div class="card-actions">
                     <button class="btn-edit" onclick="event.stopPropagation(); window.editMember(${m.id})">Düzenle</button>
                     <button class="btn-delete" onclick="event.stopPropagation(); window.deleteMember(${m.id})">Sil</button>
                 </div>
             </div>
-        `).join('') : '<div class="empty-state"><strong>Henüz danışan yok</strong><span>İlk danışanı ekleyerek başlayın.</span></div>';
+        `; }).join('') : '<div class="empty-state"><strong>Henüz danışan yok</strong><span>İlk danışanı ekleyerek başlayın.</span></div>';
     }
+
+    const scheduleDays = [
+        [1, 'Pazartesi'], [2, 'Salı'], [3, 'Çarşamba'], [4, 'Perşembe'],
+        [5, 'Cuma'], [6, 'Cumartesi'], [7, 'Pazar']
+    ];
+    const getScheduleDayName = day => scheduleDays.find(([value]) => value === Number(day))?.[1] || 'Gün';
+
+    function renderWeeklySchedule() {
+        const container = document.getElementById('weekly-schedule-grid');
+        if (!container) return;
+        const entries = state.schedules || [];
+        container.innerHTML = scheduleDays.map(([day, label]) => {
+            const dayEntries = entries.filter(item => Number(item.day_of_week) === day)
+                .sort((a, b) => a.start_time.localeCompare(b.start_time));
+            return `<section class="weekly-schedule-day">
+                <h3>${label}</h3>
+                ${dayEntries.length ? dayEntries.map(item => {
+                    const member = state.members.find(candidate => candidate.id == item.member_id);
+                    return `<button class="weekly-schedule-entry" type="button"
+                        onclick="window.openScheduleEditor(${item.id})">
+                        <strong>${escapePortalText(item.start_time.slice(0, 5))}${item.end_time ? ` - ${escapePortalText(item.end_time.slice(0, 5))}` : ''}</strong>
+                        <span>${escapePortalText(member?.ad_soyad || 'Üye bulunamadı')}</span>
+                        <small>${escapePortalText(item.branch)}</small>
+                    </button>`;
+                }).join('') : '<p class="weekly-schedule-empty">Boş</p>'}
+            </section>`;
+        }).join('');
+    }
+
+    function populateScheduleMembers(selectedId = '') {
+        const select = document.getElementById('schedule-member');
+        if (!select) return;
+        select.innerHTML = '<option value="">Üye seçin...</option>' +
+            state.members.map(member => `<option value="${member.id}" ${String(member.id) === String(selectedId) ? 'selected' : ''}>${escapePortalText(member.ad_soyad)}</option>`).join('');
+    }
+
+    window.startWeeklySchedule = () => {
+        window.nav('schedule-view');
+        document.querySelectorAll('.nav-btn').forEach(button => button.classList.remove('active'));
+        document.getElementById('btn-schedule')?.classList.add('active');
+    };
+
+    window.openScheduleEditor = (id = '') => {
+        const entry = id ? state.schedules.find(item => item.id == id) : null;
+        document.getElementById('schedule-modal-title').textContent = entry ? 'Seansı düzenle' : 'Haftalık programa ekle';
+        document.getElementById('schedule-id').value = entry?.id || '';
+        populateScheduleMembers(entry?.member_id || '');
+        document.getElementById('schedule-day').value = entry?.day_of_week || '1';
+        document.getElementById('schedule-start').value = entry?.start_time?.slice(0, 5) || '';
+        document.getElementById('schedule-end').value = entry?.end_time?.slice(0, 5) || '';
+        document.getElementById('schedule-branch').value = entry?.branch || 'Fitness';
+        document.getElementById('schedule-notes').value = entry?.notes || '';
+        document.getElementById('schedule-delete').hidden = !entry;
+        window.openModal('modal-schedule');
+    };
+
+    window.saveScheduleEntry = async event => {
+        event.preventDefault();
+        const id = document.getElementById('schedule-id').value || Date.now();
+        const memberId = document.getElementById('schedule-member').value;
+        const branch = document.getElementById('schedule-branch').value;
+        const data = {
+            id,
+            member_id: memberId,
+            day_of_week: Number(document.getElementById('schedule-day').value),
+            start_time: document.getElementById('schedule-start').value,
+            end_time: document.getElementById('schedule-end').value || null,
+            branch,
+            notes: document.getElementById('schedule-notes').value.trim(),
+            updated_at: new Date().toISOString()
+        };
+        const { error } = await supabase.from('weekly_program_schedule').upsert(data);
+        if (error) {
+            handleError(error, 'Schedule save');
+            alert(`Çizelge kaydedilemedi: ${error.message}`);
+            return;
+        }
+        const member = state.members.find(item => item.id == memberId);
+        if (member && member.brans !== branch) {
+            const { error: memberError } = await supabase.from('uyeler').update({ brans: branch }).eq('id', memberId);
+            if (memberError) {
+                handleError(memberError, 'Schedule member branch update');
+                alert(`Seans kaydedildi ancak üye branşı güncellenemedi: ${memberError.message}`);
+            }
+        }
+        await sync();
+        window.closeModal('modal-schedule');
+    };
+
+    window.deleteScheduleEntry = async () => {
+        const id = document.getElementById('schedule-id').value;
+        if (!id || !confirm('Bu seans çizelgeden silinsin mi?')) return;
+        const { error } = await supabase.from('weekly_program_schedule').delete().eq('id', id);
+        if (error) {
+            handleError(error, 'Schedule delete');
+            alert(`Seans silinemedi: ${error.message}`);
+            return;
+        }
+        await sync();
+        window.closeModal('modal-schedule');
+    };
 
     function renderAssessmentAdmin() {
         const container = document.getElementById('assessment-admin-list');
@@ -3079,6 +3189,10 @@ window.editMeasurement = (id) => {
             const meta = document.getElementById('prof-meta');
             if (meta) {
                 const details = [m.brans, m.cinsiyet].filter(Boolean);
+                const schedule = state.schedules.filter(item => item.member_id == id)
+                    .sort((a, b) => a.day_of_week - b.day_of_week || a.start_time.localeCompare(b.start_time))
+                    .map(item => `${getScheduleDayName(item.day_of_week)} ${item.start_time.slice(0, 5)}`);
+                if (schedule.length) details.push(`Program: ${schedule.join(', ')}`);
                 meta.innerText = details.length ? details.join(' · ') : 'Profil detaylarını ve gelişimi yönetin.';
             }
         }
@@ -3204,6 +3318,7 @@ window.editMeasurement = (id) => {
                 measurements: state.measurements,
                 workouts: state.workouts,
                 documents: state.documents,
+                schedules: state.schedules,
                 exercises: state.exercises,
                 foods: state.foods,
                 diets: state.diets,
@@ -3225,6 +3340,7 @@ window.editMeasurement = (id) => {
                 state.measurements = data.measurements || [];
                 state.workouts = data.workouts || [];
                 state.documents = data.documents || [];
+                state.schedules = data.schedules || [];
                 state.exercises = data.exercises || [];
                 state.foods = data.foods || [];
                 state.diets = data.diets || [];
@@ -3265,6 +3381,7 @@ window.editMeasurement = (id) => {
                 supabase.from('olcumler').select('*'),
                 supabase.from('antrenmanlar').select('*'),
                 supabase.from('dokumanlar').select('*'),
+                supabase.from('weekly_program_schedule').select('*'),
                 fetchAll('master_egzersizler'),
                 fetchAll('master_besinler'),
                 supabase.from('beslenme_planlari').select('*')
@@ -3321,9 +3438,10 @@ window.editMeasurement = (id) => {
             });
             state.workouts = results[3].data || [];
             state.documents = results[4].data || [];
-            state.exercises = results[5].data || [];
-            state.foods = results[6].data || [];
-            state.diets = results[7].data || [];
+            state.schedules = results[5].data || [];
+            state.exercises = results[6].data || [];
+            state.foods = results[7].data || [];
+            state.diets = results[8].data || [];
 
 
             refreshAll();

@@ -22,7 +22,8 @@ const tables = [
   'dokumanlar',
   'master_egzersizler',
   'master_besinler',
-  'beslenme_planlari'
+  'beslenme_planlari',
+  'weekly_program_schedule'
 ];
 
 async function migrate() {

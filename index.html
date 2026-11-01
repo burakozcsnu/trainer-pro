@@ -20,7 +20,7 @@
     <meta name="apple-mobile-web-app-title" content="Zen Wellness Club">
     <link rel="apple-touch-icon" href="zen-wellness-icon.png?v=1.0">
 
-    <link rel="stylesheet" href="style.css?v=1.9.16">
+    <link rel="stylesheet" href="style.css?v=1.9.17">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     </head>
@@ -121,6 +121,8 @@
                         Kütüphane</span></button>
                 <button onclick="nav('nutrition-view')" class="nav-btn" id="btn-nutrition">🍏 <span>Beslenme &
                         Supplement</span></button>
+                <button onclick="startWeeklySchedule()" class="nav-btn" id="btn-schedule">🗓️ <span>Haftalık Program
+                        Çizelgesi</span></button>
                 <button onclick="startSurvey()" class="nav-btn" id="btn-survey">🎯 <span>Akıllı
                         Değerlendirme</span></button>
             </nav>
@@ -200,6 +202,21 @@
                     <p>Yanıtlar danışan kartına ve ilk test ölçümüne otomatik aktarılır.</p>
                 </div>
                 <div id="assessment-admin-list" class="grid"></div>
+            </section>
+
+            <section id="schedule-view" class="view">
+                <div class="view-header">
+                    <h1>🗓️ Haftalık Program Çizelgesi</h1>
+                    <button class="btn-primary" type="button" onclick="window.openScheduleEditor()">+ Programa ekle</button>
+                </div>
+                <div class="section-intro">
+                    <div>
+                        <span class="eyebrow">HAFTALIK PLAN</span>
+                        <h2>Üye seansları ve branşlar</h2>
+                    </div>
+                    <p>Bir seansa tıklayarak gün, saat, üye ve branş bilgilerini güncelleyebilirsiniz.</p>
+                </div>
+                <div id="weekly-schedule-grid" class="weekly-schedule-grid"></div>
             </section>
 
             <!-- VIEW: Arama Sonuçları -->
@@ -765,6 +782,40 @@
             <div id="detail-body"></div>
             <div class="modal-btns"><button class="btn-undo" onclick="globalUndo()">Geri Al</button></div>
         </div>
+        <div id="modal-schedule" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('modal-schedule')">&times;</span>
+                <h2 id="schedule-modal-title">Haftalık programa ekle</h2>
+                <form onsubmit="window.saveScheduleEntry(event)">
+                    <input type="hidden" id="schedule-id">
+                    <label for="schedule-member">Üye</label>
+                    <select id="schedule-member" required></select>
+                    <label for="schedule-day">Gün</label>
+                    <select id="schedule-day" required>
+                        <option value="1">Pazartesi</option><option value="2">Salı</option>
+                        <option value="3">Çarşamba</option><option value="4">Perşembe</option>
+                        <option value="5">Cuma</option><option value="6">Cumartesi</option>
+                        <option value="7">Pazar</option>
+                    </select>
+                    <div class="grid" style="grid-template-columns:1fr 1fr; gap:0.6rem;">
+                        <label for="schedule-start">Başlangıç<input id="schedule-start" type="time" required></label>
+                        <label for="schedule-end">Bitiş<input id="schedule-end" type="time"></label>
+                    </div>
+                    <label for="schedule-branch">Branş</label>
+                    <select id="schedule-branch" required>
+                        <option value="Fitness">Fitness</option><option value="Karate">Karate</option>
+                        <option value="Basketbol">Basketbol</option><option value="Yoga">Yoga</option>
+                        <option value="Fonksiyonel Egzersiz">Fonksiyonel Egzersiz</option>
+                    </select>
+                    <label for="schedule-notes">Not (opsiyonel)<textarea id="schedule-notes" rows="3"></textarea></label>
+                    <div class="modal-btns">
+                        <button class="btn-primary" type="submit">Kaydet</button>
+                        <button class="btn-delete" id="schedule-delete" type="button"
+                            onclick="window.deleteScheduleEntry()">Sil</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
     <div id="modal-member" class="modal">
         <div class="modal-content"><span class="close" onclick="closeModal('modal-member')">&times;</span>
@@ -791,7 +842,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.3.86"></script>
+    <script src="script.js?v=1.3.87"></script>
 </body>
 
 </html>

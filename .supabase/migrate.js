@@ -43,6 +43,19 @@ async function migrate() {
         ADD COLUMN IF NOT EXISTS degerlendirme_tamamlandi BOOLEAN NOT NULL DEFAULT false,
         ADD COLUMN IF NOT EXISTS degerlendirme_tarihi TIMESTAMPTZ;
 
+      CREATE TABLE IF NOT EXISTS weekly_program_schedule (
+        id BIGINT PRIMARY KEY,
+        member_id BIGINT NOT NULL REFERENCES uyeler(id) ON DELETE CASCADE,
+        day_of_week SMALLINT NOT NULL CHECK (day_of_week BETWEEN 1 AND 7),
+        start_time TIME NOT NULL,
+        end_time TIME,
+        branch TEXT NOT NULL DEFAULT 'Fitness',
+        notes TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (member_id, day_of_week, start_time)
+      );
+
       NOTIFY pgrst, 'reload schema';
     `);
     console.log('Migration successful.');
