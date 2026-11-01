@@ -56,6 +56,27 @@ async function migrate() {
         UNIQUE (member_id, day_of_week, start_time)
       );
 
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id BIGINT PRIMARY KEY,
+        member_id BIGINT NOT NULL REFERENCES uyeler(id) ON DELETE CASCADE,
+        endpoint TEXT NOT NULL UNIQUE,
+        p256dh TEXT NOT NULL,
+        auth TEXT NOT NULL,
+        user_agent TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS push_reminder_deliveries (
+        id BIGINT PRIMARY KEY,
+        subscription_id BIGINT NOT NULL REFERENCES push_subscriptions(id) ON DELETE CASCADE,
+        schedule_id BIGINT NOT NULL REFERENCES weekly_program_schedule(id) ON DELETE CASCADE,
+        occurrence_key TEXT NOT NULL,
+        reminder_type TEXT NOT NULL CHECK (reminder_type IN ('day-before', 'hour-before')),
+        delivered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (subscription_id, schedule_id, occurrence_key, reminder_type)
+      );
+
       NOTIFY pgrst, 'reload schema';
     `);
     console.log('Migration successful.');

@@ -162,6 +162,7 @@
     const CONFIG = {
         SUPABASE_URL: 'https://mdcvljbbnoxqsfwcjvqz.supabase.co',
         SUPABASE_KEY: 'sb_publishable_cR0_yg6oxqfP4mAcPTL4Bw_ZhW16sSr',
+        VAPID_PUBLIC_KEY: '',
         IS_DEV: true
     };
 
@@ -293,6 +294,38 @@
         });
     };
 
+    const decodeVapidKey = value => {
+        const padding = '='.repeat((4 - value.length % 4) % 4);
+        const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/');
+        return Uint8Array.from(atob(base64), character => character.charCodeAt(0));
+    };
+
+    async function registerMemberPushSubscription(member) {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            throw new Error('Bu tarayıcı gerçek push bildirimlerini desteklemiyor.');
+        }
+        if (!CONFIG.VAPID_PUBLIC_KEY) {
+            throw new Error('Push bildirim anahtarı henüz yapılandırılmadı.');
+        }
+        const registration = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+        const existing = await registration.pushManager.getSubscription();
+        const subscription = existing || await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: decodeVapidKey(CONFIG.VAPID_PUBLIC_KEY)
+        });
+        const { endpoint, keys } = subscription.toJSON();
+        const { error } = await supabase.from('push_subscriptions').upsert({
+            id: Date.now(),
+            member_id: member.id,
+            endpoint,
+            p256dh: keys?.p256dh,
+            auth: keys?.auth,
+            user_agent: navigator.userAgent,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'endpoint' });
+        if (error) throw error;
+    }
+
     function checkMemberNotifications() {
         if (!memberNotificationMember || !memberNotificationSchedules.length) return;
         const now = Date.now();
@@ -325,9 +358,17 @@
             if (status) status.textContent = 'Bu tarayıcı bildirimleri desteklemiyor.';
             return;
         }
-        const permission = await Notification.requestPermission();
+        try {
+            if (Notification.permission === 'default') await Notification.requestPermission();
+            if (Notification.permission !== 'granted') throw new Error('Bildirim izni verilmedi.');
+            await registerMemberPushSubscription(memberNotificationMember);
+        } catch (error) {
+            handleError(error, 'Member push subscription');
+            if (status) status.textContent = error.message;
+            return;
+        }
         if (status) {
-            status.textContent = permission === 'granted'
+            status.textContent = Notification.permission === 'granted'
                 ? 'Bildirimler açık: 1 gün ve 1 saat önce hatırlatılacaksınız.'
                 : 'Bildirim izni verilmedi. Tarayıcı ayarlarından izin verebilirsiniz.';
         }

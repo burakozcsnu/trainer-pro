@@ -23,7 +23,9 @@ const tables = [
   'master_egzersizler',
   'master_besinler',
   'beslenme_planlari',
-  'weekly_program_schedule'
+  'weekly_program_schedule',
+  'push_subscriptions',
+  'push_reminder_deliveries'
 ];
 
 async function migrate() {
@@ -39,6 +41,12 @@ async function migrate() {
       }
       if (table === 'olcumler') {
         await client.query(`DROP POLICY IF EXISTS "olcumler_member_insert" ON olcumler;`);
+      }
+      if (table === 'push_subscriptions') {
+        await client.query(`DROP POLICY IF EXISTS "push_subscriptions_member_access" ON push_subscriptions;`);
+      }
+      if (table === 'push_reminder_deliveries') {
+        await client.query(`DROP POLICY IF EXISTS "push_reminder_deliveries_member_read" ON push_reminder_deliveries;`);
       }
       await client.query(`
         CREATE POLICY "${table}_admin_access"
@@ -174,6 +182,32 @@ async function migrate() {
       USING (EXISTS (
         SELECT 1 FROM uyeler
         WHERE uyeler.id = weekly_program_schedule.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
+
+      CREATE POLICY "push_subscriptions_member_access"
+      ON push_subscriptions
+      FOR ALL
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = push_subscriptions.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ))
+      WITH CHECK (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = push_subscriptions.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
+
+      CREATE POLICY "push_reminder_deliveries_member_read"
+      ON push_reminder_deliveries
+      FOR SELECT
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM push_subscriptions
+        JOIN uyeler ON uyeler.id = push_subscriptions.member_id
+        WHERE push_subscriptions.id = push_reminder_deliveries.subscription_id
           AND uyeler.auth_user_id = auth.uid()
       ));
     `);
