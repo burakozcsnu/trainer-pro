@@ -21,6 +21,7 @@ async function rollback() {
   try {
     await client.query('BEGIN');
     await client.query(`
+      DROP TABLE IF EXISTS workout_session_steps;
       DROP TABLE IF EXISTS workout_sessions;
       DROP TABLE IF EXISTS health_metrics;
       DROP TABLE IF EXISTS device_connections;

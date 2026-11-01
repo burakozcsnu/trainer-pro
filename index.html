@@ -628,6 +628,20 @@
                         <input type="text" id="w-name" required class="w-full">
                     </div>
                 </div>
+                <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                    <div class="form-group">
+                        <label for="w-rpe">RPE</label>
+                        <input type="number" id="w-rpe" min="1" max="10" step="1" placeholder="1-10">
+                    </div>
+                    <div class="form-group">
+                        <label for="w-tempo">Tempo</label>
+                        <input type="text" id="w-tempo" placeholder="Örn. 3010">
+                    </div>
+                    <div class="form-group">
+                        <label for="w-rest">Dinlenme (sn)</label>
+                        <input type="number" id="w-rest" min="0" step="5" placeholder="60">
+                    </div>
+                </div>
                 <div id="set-rows-container" style="max-height: 55vh; overflow-y: auto; overflow-x: hidden; padding-right: 5px;"></div>
                 <button type="button" onclick="addSetRowToWorkout()" class="btn-secondary mt-1">+ Egzersiz Ekle</button>
                 <button type="submit" class="btn-primary w-full mt-1">Antrenmanı Kaydet</button>
@@ -939,9 +953,9 @@
         </div>
     </div>
 
-    <script src="data-service.js?v=1.3.111"></script>
-    <script src="exercise-domain.js?v=1.3.111"></script>
-    <script src="script.js?v=1.3.111"></script>
+    <script src="data-service.js?v=1.3.112"></script>
+    <script src="exercise-domain.js?v=1.3.112"></script>
+    <script src="script.js?v=1.3.112"></script>
 </body>
 
 </html>

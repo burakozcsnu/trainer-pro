@@ -34,6 +34,7 @@ const tables = [
   'device_connections',
   'health_metrics',
   'workout_sessions'
+  ,'workout_session_steps'
 ];
 
 async function migrate() {
@@ -65,7 +66,7 @@ async function migrate() {
       if (table === 'workout_completions') {
         await client.query(`DROP POLICY IF EXISTS "workout_completions_member_access" ON workout_completions;`);
       }
-      if (['device_connections', 'health_metrics', 'workout_sessions'].includes(table)) {
+      if (['device_connections', 'health_metrics', 'workout_sessions', 'workout_session_steps'].includes(table)) {
         await client.query(`DROP POLICY IF EXISTS "${table}_member_access" ON ${table};`);
       }
       await client.query(`
@@ -313,6 +314,23 @@ async function migrate() {
       WITH CHECK (EXISTS (
         SELECT 1 FROM uyeler
         WHERE uyeler.id = workout_sessions.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
+
+      CREATE POLICY "workout_session_steps_member_access"
+      ON workout_session_steps
+      FOR ALL
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM workout_sessions
+        JOIN uyeler ON uyeler.id = workout_sessions.member_id
+        WHERE workout_sessions.id = workout_session_steps.workout_session_id
+          AND uyeler.auth_user_id = auth.uid()
+      ))
+      WITH CHECK (EXISTS (
+        SELECT 1 FROM workout_sessions
+        JOIN uyeler ON uyeler.id = workout_sessions.member_id
+        WHERE workout_sessions.id = workout_session_steps.workout_session_id
           AND uyeler.auth_user_id = auth.uid()
       ));
     `);

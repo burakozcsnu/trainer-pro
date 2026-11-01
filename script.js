@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.111';
+    const APP_VERSION = '1.3.112';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -352,6 +352,7 @@
     let state = {
         members: [], exercises: [], programs: [], measurements: [], workouts: [], documents: [], schedules: [], cloudFiles: [],
         foods: [], diets: [], healthMetrics: [], workoutSessions: [], deviceConnections: [],
+        activeWorkoutSession: null,
         activeMemberId: null, undoStack: [], navHistory: ['members-view'],
         surveyAnswers: {}, currentStep: 0, measurementRequired: false,
         assessmentStep: 0, assessmentAnswers: {}, assessmentMember: null
@@ -3468,7 +3469,10 @@ window.editMeasurement = (id) => {
                     weight: setRow.querySelector('.s-weight').value,
                     reps: setRow.querySelector('.s-reps').value,
                     sure: setRow.querySelector('.s-sure').value,
-                    tip: setRow.querySelector('.s-tip').value
+                    tip: setRow.querySelector('.s-tip').value,
+                    tempo: document.getElementById('w-tempo').value.trim(),
+                    rest_seconds: Number(document.getElementById('w-rest').value) || 0,
+                    rpe: Number(document.getElementById('w-rpe').value) || null
                 });
             });
         });
@@ -3478,7 +3482,11 @@ window.editMeasurement = (id) => {
             member_id: state.activeMemberId,
             tarih: document.getElementById('w-date').value,
             sablon: document.getElementById('w-name').value,
-            setler: JSON.stringify(setler)
+            setler: JSON.stringify(setler),
+            status: 'completed',
+            rpe: Number(document.getElementById('w-rpe').value) || null,
+            tempo: document.getElementById('w-tempo').value.trim() || null,
+            rest_seconds: Number(document.getElementById('w-rest').value) || 0
         };
 
         const workoutResult = await dataService.mutate('antrenmanlar', 'upsert', w);
@@ -3487,6 +3495,66 @@ window.editMeasurement = (id) => {
         await sync();
         window.closeModal('modal-workout');
         alert("Antrenman kaydedildi!");
+    };
+
+    window.startWorkoutSession = async (activityType = 'traditional_strength') => {
+        if (!state.activeMemberId) throw new Error('Aktif üye seçilmedi.');
+        const session = {
+            id: Date.now(),
+            member_id: state.activeMemberId,
+            source: 'trainer_pro',
+            activity_type: activityType,
+            status: 'active',
+            started_at: new Date().toISOString(),
+            metadata: { appVersion: APP_VERSION }
+        };
+        const result = await dataService.mutate('workout_sessions', 'upsert', session);
+        if (result.error) throw result.error;
+        state.activeWorkoutSession = session;
+        return session;
+    };
+
+    window.finishWorkoutSession = async (summary = {}) => {
+        const session = state.activeWorkoutSession;
+        if (!session) throw new Error('Aktif antrenman oturumu bulunamadı.');
+        const completed = {
+            ...session,
+            status: 'completed',
+            ended_at: new Date().toISOString(),
+            active_energy_kcal: summary.activeEnergyKcal ?? null,
+            average_heart_rate: summary.averageHeartRate ?? null,
+            maximum_heart_rate: summary.maximumHeartRate ?? null,
+            metadata: { ...session.metadata, ...summary }
+        };
+        const result = await dataService.mutate('workout_sessions', 'upsert', completed);
+        if (result.error) throw result.error;
+        state.activeWorkoutSession = null;
+        return completed;
+    };
+
+    window.saveWorkoutSessionStep = async (step) => {
+        const session = state.activeWorkoutSession;
+        if (!session) throw new Error('Aktif antrenman oturumu bulunamadı.');
+        const payload = {
+            id: step.id || Date.now(),
+            workout_session_id: session.id,
+            exercise_name: step.exerciseName,
+            step_index: step.stepIndex,
+            sets: step.sets ?? null,
+            reps: step.reps ?? null,
+            weight: step.weight ?? null,
+            duration_seconds: step.durationSeconds ?? null,
+            tempo: step.tempo ?? null,
+            rest_seconds: step.restSeconds ?? 0,
+            rpe: step.rpe ?? null,
+            completed: step.completed ?? false,
+            completed_at: step.completed ? new Date().toISOString() : null
+        };
+        const result = await dataService.mutate('workout_session_steps', 'upsert', payload, {
+            onConflict: 'workout_session_id,step_index'
+        });
+        if (result.error) throw result.error;
+        return payload;
     };
 
     window.addExerciseRowToTemplate = (name = '') => {

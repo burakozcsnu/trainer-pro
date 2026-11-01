@@ -31,7 +31,9 @@
 
             const execute = async mutation => {
                 let query = client.from(mutation.table);
-                if (mutation.operation === 'upsert') query = query.upsert(mutation.payload);
+                if (mutation.operation === 'upsert') {
+                    query = query.upsert(mutation.payload, mutation.onConflict ? { onConflict: mutation.onConflict } : undefined);
+                }
                 if (mutation.operation === 'insert') query = query.insert(mutation.payload);
                 if (mutation.operation === 'delete') query = query.delete().eq('id', mutation.id);
                 if (mutation.operation === 'update') {
@@ -110,7 +112,8 @@
                         operation,
                         payload,
                         id: options.id || payload?.id,
-                        expectedUpdatedAt: options.expectedUpdatedAt
+                        expectedUpdatedAt: options.expectedUpdatedAt,
+                        onConflict: options.onConflict
                     };
                     if (!getOnline()) return enqueue(mutation);
                     const result = await execute(mutation);

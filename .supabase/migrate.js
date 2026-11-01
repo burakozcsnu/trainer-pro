@@ -139,6 +139,13 @@ async function migrate() {
         ADD COLUMN IF NOT EXISTS difficulty TEXT,
         ADD COLUMN IF NOT EXISTS source_url TEXT;
 
+      ALTER TABLE antrenmanlar
+        ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'completed',
+        ADD COLUMN IF NOT EXISTS rpe NUMERIC,
+        ADD COLUMN IF NOT EXISTS tempo TEXT,
+        ADD COLUMN IF NOT EXISTS rest_seconds INTEGER NOT NULL DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS template_id BIGINT;
+
       CREATE TABLE IF NOT EXISTS schema_migrations (
         version TEXT PRIMARY KEY,
         applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -323,6 +330,23 @@ async function migrate() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         UNIQUE (member_id, source, external_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS workout_session_steps (
+        id BIGINT PRIMARY KEY,
+        workout_session_id BIGINT NOT NULL REFERENCES workout_sessions(id) ON DELETE CASCADE,
+        exercise_name TEXT NOT NULL,
+        step_index INTEGER NOT NULL,
+        sets INTEGER,
+        reps INTEGER,
+        weight NUMERIC,
+        duration_seconds INTEGER,
+        tempo TEXT,
+        rest_seconds INTEGER,
+        rpe NUMERIC,
+        completed BOOLEAN NOT NULL DEFAULT false,
+        completed_at TIMESTAMPTZ,
+        UNIQUE (workout_session_id, step_index)
       );
 
       CREATE INDEX IF NOT EXISTS health_metrics_member_recorded_idx
