@@ -30,7 +30,18 @@ async function migrate() {
         ADD COLUMN IF NOT EXISTS cinsiyet TEXT,
         ADD COLUMN IF NOT EXISTS kayit_tarihi DATE,
         ADD COLUMN IF NOT EXISTS auth_user_id UUID UNIQUE,
-        ADD COLUMN IF NOT EXISTS email TEXT;
+        ADD COLUMN IF NOT EXISTS email TEXT,
+        ADD COLUMN IF NOT EXISTS telefon TEXT,
+        ADD COLUMN IF NOT EXISTS dogum_tarihi DATE,
+        ADD COLUMN IF NOT EXISTS saglik_gecmisi TEXT,
+        ADD COLUMN IF NOT EXISTS alerjiler TEXT,
+        ADD COLUMN IF NOT EXISTS beslenme_aliskanliklari TEXT,
+        ADD COLUMN IF NOT EXISTS hareket_aliskanliklari TEXT,
+        ADD COLUMN IF NOT EXISTS spor_gecmisi TEXT,
+        ADD COLUMN IF NOT EXISTS beklentiler TEXT,
+        ADD COLUMN IF NOT EXISTS degerlendirme_verileri JSONB DEFAULT '{}'::jsonb,
+        ADD COLUMN IF NOT EXISTS degerlendirme_tamamlandi BOOLEAN NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS degerlendirme_tarihi TIMESTAMPTZ;
 
       NOTIFY pgrst, 'reload schema';
     `);

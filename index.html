@@ -88,6 +88,25 @@
             <div id="member-portal-content"></div>
         </main>
     </section>
+    <div id="member-assessment" class="member-assessment" hidden aria-hidden="true">
+        <div class="member-assessment-card">
+            <div class="member-assessment-progress">
+                <span id="assessment-step-label">1 / 11</span>
+                <span id="assessment-progress-value">0%</span>
+            </div>
+            <div class="member-assessment-progress-bar">
+                <span id="assessment-progress-bar"></span>
+            </div>
+            <div id="assessment-question"></div>
+            <div class="member-assessment-actions">
+                <button id="assessment-back" class="btn-secondary" type="button"
+                    onclick="window.previousAssessmentQuestion()">Geri</button>
+                <button id="assessment-next" class="btn-primary" type="button"
+                    onclick="window.nextAssessmentQuestion()">Devam</button>
+            </div>
+            <p id="assessment-error" class="auth-error" role="alert"></p>
+        </div>
+    </div>
     <div id="app-wrapper" class="app-wrapper">
         <!-- Sidebar -->
         <aside class="sidebar">
@@ -166,6 +185,21 @@
                     </div>
                 </div>
                 <div id="members-grid" class="grid"></div>
+            </section>
+
+            <!-- VIEW: Akıllı Değerlendirme -->
+            <section id="assessment-view" class="view">
+                <div class="view-header">
+                    <h1>🎯 Akıllı Değerlendirme</h1>
+                </div>
+                <div class="section-intro">
+                    <div>
+                        <span class="eyebrow">DANIŞAN İÇGÖRÜLERİ</span>
+                        <h2>Üyelerin onboarding yanıtları</h2>
+                    </div>
+                    <p>Yanıtlar danışan kartına ve ilk test ölçümüne otomatik aktarılır.</p>
+                </div>
+                <div id="assessment-admin-list" class="grid"></div>
             </section>
 
             <!-- VIEW: Arama Sonuçları -->

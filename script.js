@@ -253,7 +253,8 @@
         members: [], exercises: [], programs: [], measurements: [], workouts: [], documents: [], cloudFiles: [],
         foods: [], diets: [],
         activeMemberId: null, undoStack: [], navHistory: ['members-view'],
-        surveyAnswers: {}, currentStep: 0, measurementRequired: false
+        surveyAnswers: {}, currentStep: 0, measurementRequired: false,
+        assessmentStep: 0, assessmentAnswers: {}, assessmentMember: null
     };
 
     const escapePortalText = (value) => String(value ?? '--')
@@ -357,6 +358,196 @@
         });
     };
 
+    const assessmentQuestions = [
+        { key: 'ad_soyad', title: 'Adınız ve soyadınız nedir?', type: 'text', label: 'Ad Soyad', required: true },
+        { key: 'telefon', title: 'Size hangi cep telefonu numarasından ulaşabiliriz?', type: 'tel', label: 'Cep telefonu', required: true },
+        { key: 'dogum_tarihi', title: 'Doğum tarihiniz nedir?', type: 'date', label: 'Doğum tarihi', required: true },
+        {
+            key: 'cinsiyet', title: 'Cinsiyetinizi nasıl belirtmek istersiniz?', type: 'radio',
+            options: ['Kadın', 'Erkek', 'Belirtmek istemiyorum'], required: true
+        },
+        { key: 'boy', title: 'Boyunuz ve mevcut kilonuz nedir?', type: 'body', required: true },
+        {
+            key: 'saglik_gecmisi', title: 'Bilmemiz gereken bir hastalık geçmişiniz var mı?', type: 'textarea',
+            placeholder: 'Yoksa “Yok” yazabilirsiniz.', required: true
+        },
+        {
+            key: 'alerjiler', title: 'Alerji veya özel sağlık hassasiyetiniz var mı?', type: 'textarea',
+            placeholder: 'Yoksa “Yok” yazabilirsiniz.', required: true
+        },
+        {
+            key: 'beslenme_aliskanliklari', title: 'Haftalık beslenme alışkanlıklarınızı nasıl tanımlarsınız?', type: 'multi',
+            options: ['Düzenli öğünler', 'Dışarıdan sık yemek', 'Atıştırma eğilimi', 'Su tüketimim düşük', 'Özel beslenme uyguluyorum'], required: true
+        },
+        {
+            key: 'hareket_aliskanliklari', title: 'Haftalık hareket alışkanlığınız hangisine daha yakın?', type: 'multi',
+            options: ['Hareketsiz', 'Günlük yürüyüş', 'Haftada 1-2 gün', 'Haftada 3-4 gün', 'Haftada 5+ gün'], required: true
+        },
+        {
+            key: 'spor_gecmisi', title: 'Spor geçmişinizi kısaca anlatır mısınız?', type: 'textarea',
+            placeholder: 'Daha önce yaptığınız sporlar ve süreleri.', required: true
+        },
+        {
+            key: 'beklentiler', title: 'Zen Wellness Club hizmetinden beklentiniz nedir?', type: 'textarea',
+            placeholder: 'Hedefinizi ve önceliğinizi birkaç cümleyle yazın.', required: true
+        }
+    ];
+
+    const getAssessmentValue = (question) => {
+        const answer = state.assessmentAnswers[question.key];
+        if (question.type === 'multi') return Array.isArray(answer) ? answer : [];
+        return answer ?? '';
+    };
+
+    const renderAssessmentQuestion = () => {
+        const question = assessmentQuestions[state.assessmentStep];
+        if (!question) return;
+        const container = document.getElementById('assessment-question');
+        const stepLabel = document.getElementById('assessment-step-label');
+        const progressValue = document.getElementById('assessment-progress-value');
+        const progressBar = document.getElementById('assessment-progress-bar');
+        const back = document.getElementById('assessment-back');
+        const next = document.getElementById('assessment-next');
+        if (!container || !stepLabel || !progressValue || !progressBar || !back || !next) return;
+
+        const progress = Math.round(((state.assessmentStep + 1) / assessmentQuestions.length) * 100);
+        stepLabel.textContent = `${state.assessmentStep + 1} / ${assessmentQuestions.length}`;
+        progressValue.textContent = `${progress}%`;
+        progressBar.style.width = `${progress}%`;
+        back.hidden = state.assessmentStep === 0;
+        next.textContent = state.assessmentStep === assessmentQuestions.length - 1 ? 'Değerlendirmeyi tamamla' : 'Devam';
+
+        const value = getAssessmentValue(question);
+        let control = '';
+        if (question.type === 'body') {
+            control = `
+                <div class="grid" style="grid-template-columns:1fr 1fr; gap:0.65rem; margin-top:1.15rem;">
+                    <label>Boy (cm)<input id="assessment-height" type="number" min="80" max="250" step="0.1" value="${escapePortalText(value.height)}" required></label>
+                    <label>Kilo (kg)<input id="assessment-weight" type="number" min="20" max="400" step="0.1" value="${escapePortalText(value.weight)}" required></label>
+                </div>`;
+        } else if (question.type === 'radio' || question.type === 'multi') {
+            const selected = question.type === 'radio' ? [value] : value;
+            control = `<div class="assessment-option-grid">${question.options.map(option => `
+                <label class="assessment-option">
+                    <input type="${question.type === 'radio' ? 'radio' : 'checkbox'}"
+                        name="assessment-option" value="${escapePortalText(option)}"
+                        ${selected.includes(option) ? 'checked' : ''}>
+                    <span>${escapePortalText(option)}</span>
+                </label>`).join('')}</div>`;
+        } else if (question.type === 'textarea') {
+            control = `<textarea id="assessment-answer" rows="5" placeholder="${escapePortalText(question.placeholder)}" required>${escapePortalText(value)}</textarea>`;
+        } else {
+            control = `<input id="assessment-answer" type="${question.type}" value="${escapePortalText(value)}" placeholder="${escapePortalText(question.label)}" ${question.required ? 'required' : ''}>`;
+        }
+        container.innerHTML = `
+            <div class="member-assessment-question">
+                <h2>${escapePortalText(question.title)}</h2>
+                <p>Bu bilgiler yalnızca size uygun bir wellness planı oluşturmak için kullanılır.</p>
+                ${control}
+            </div>`;
+        document.getElementById('assessment-error').textContent = '';
+        container.querySelector('input, textarea')?.focus();
+    };
+
+    const captureAssessmentAnswer = () => {
+        const question = assessmentQuestions[state.assessmentStep];
+        if (question.type === 'body') {
+            const height = parseFloat(document.getElementById('assessment-height')?.value);
+            const weight = parseFloat(document.getElementById('assessment-weight')?.value);
+            if (!height || !weight) return false;
+            state.assessmentAnswers[question.key] = { height, weight };
+            return true;
+        }
+        if (question.type === 'multi') {
+            const values = [...document.querySelectorAll('input[name="assessment-option"]:checked')].map(input => input.value);
+            if (!values.length) return false;
+            state.assessmentAnswers[question.key] = values;
+            return true;
+        }
+        const input = document.getElementById('assessment-answer');
+        const value = input?.value.trim();
+        if (!value) return false;
+        state.assessmentAnswers[question.key] = value;
+        return true;
+    };
+
+    window.showMemberAssessment = (member) => {
+        state.assessmentMember = member;
+        state.assessmentStep = 0;
+        state.assessmentAnswers = {
+            ad_soyad: member.ad_soyad || '',
+            cinsiyet: member.cinsiyet === 'Belirtilmedi' ? '' : member.cinsiyet || '',
+            boy: member.boy ? { height: member.boy, weight: '' } : {}
+        };
+        document.getElementById('member-assessment')?.removeAttribute('hidden');
+        document.getElementById('member-assessment')?.setAttribute('aria-hidden', 'false');
+        renderAssessmentQuestion();
+    };
+
+    window.previousAssessmentQuestion = () => {
+        if (state.assessmentStep === 0) return;
+        captureAssessmentAnswer();
+        state.assessmentStep -= 1;
+        renderAssessmentQuestion();
+    };
+
+    window.nextAssessmentQuestion = async () => {
+        const error = document.getElementById('assessment-error');
+        if (!captureAssessmentAnswer()) {
+            if (error) error.textContent = 'Lütfen bu soruyu yanıtlayın.';
+            return;
+        }
+        if (state.assessmentStep < assessmentQuestions.length - 1) {
+            state.assessmentStep += 1;
+            renderAssessmentQuestion();
+            return;
+        }
+
+        const member = state.assessmentMember;
+        const answers = state.assessmentAnswers;
+        const birthDate = new Date(`${answers.dogum_tarihi}T00:00:00`);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        if (today < new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate())) age -= 1;
+        const completedAt = new Date().toISOString();
+        const memberUpdate = {
+            ad_soyad: answers.ad_soyad,
+            telefon: answers.telefon,
+            dogum_tarihi: answers.dogum_tarihi,
+            cinsiyet: answers.cinsiyet,
+            boy: answers.boy.height,
+            saglik_gecmisi: answers.saglik_gecmisi,
+            alerjiler: answers.alerjiler,
+            beslenme_aliskanliklari: answers.beslenme_aliskanliklari.join(', '),
+            hareket_aliskanliklari: answers.hareket_aliskanliklari.join(', '),
+            spor_gecmisi: answers.spor_gecmisi,
+            beklentiler: answers.beklentiler,
+            degerlendirme_verileri: answers,
+            degerlendirme_tamamlandi: true,
+            degerlendirme_tarihi: completedAt
+        };
+        const measurement = {
+            id: Date.now(),
+            member_id: member.id,
+            tarih: completedAt.slice(0, 10),
+            weight: answers.boy.weight,
+            l_leg: age
+        };
+        const [memberResult, measurementResult] = await Promise.all([
+            supabase.from('uyeler').update(memberUpdate).eq('id', member.id).eq('auth_user_id', member.auth_user_id),
+            supabase.from('olcumler').upsert(measurement)
+        ]);
+        if (memberResult.error || measurementResult.error) {
+            handleError(memberResult.error || measurementResult.error, 'Member assessment save');
+            if (error) error.textContent = 'Bilgiler kaydedilemedi. Lütfen tekrar deneyin.';
+            return;
+        }
+        Object.assign(member, memberUpdate);
+        document.getElementById('member-assessment')?.setAttribute('hidden', '');
+        document.getElementById('member-assessment')?.setAttribute('aria-hidden', 'true');
+        await loadMemberPortal();
+    };
+
     async function loadMemberPortal() {
         const status = document.getElementById('member-portal-status');
         if (status) status.textContent = 'Veriler yükleniyor...';
@@ -415,6 +606,7 @@
                 diets: dietsResult.data || [],
                 documents: documentsResult.data || []
             });
+            if (!member.degerlendirme_tamamlandi) window.showMemberAssessment(member);
             if (status) status.textContent = 'Salt okunur danışan paneli';
         } catch (error) {
             handleError(error, 'Member portal load');
@@ -1562,6 +1754,7 @@
     function refreshAll() {
         try {
             renderMembers();
+            renderAssessmentAdmin();
             renderWorkoutHistory();
             renderMeasurementHistory();
             if(typeof renderCardioHistory === 'function') renderCardioHistory();
@@ -1600,6 +1793,37 @@
                 </div>
             `;
         }
+
+        function renderAssessmentAdminLegacy() {
+            const container = document.getElementById('assessment-admin-list');
+            if (!container) return;
+            if (!state.members.length) {
+                container.innerHTML = '<div class="empty-state"><strong>Henüz danışan yok</strong><span>Üye kaydı tamamlandığında değerlendirme burada görünür.</span></div>';
+                return;
+            }
+            container.innerHTML = state.members.map(member => {
+                const completed = Boolean(member.degerlendirme_tamamlandi);
+                const answers = window.safeJSONParse(member.degerlendirme_verileri, {});
+                return `
+                    <article class="card assessment-admin-card">
+                        <div class="member-card-top">
+                            <div>
+                                <span class="eyebrow">${completed ? 'TAMAMLANDI' : 'BEKLENİYOR'}</span>
+                                <h3>${escapePortalText(member.ad_soyad)}</h3>
+                            </div>
+                            <span aria-label="${completed ? 'Tamamlandı' : 'Bekleniyor'}">${completed ? '✓' : '…'}</span>
+                        </div>
+                        ${completed ? `
+                            <p><strong>Hedef:</strong> ${escapePortalText(member.beklentiler)}</p>
+                            <p><strong>Sağlık:</strong> ${escapePortalText(member.saglik_gecmisi)}</p>
+                            <p><strong>Hareket:</strong> ${escapePortalText(member.hareket_aliskanliklari)}</p>
+                            <p class="member-portal-muted">Boy: ${escapePortalText(member.boy)} cm · ${escapePortalText(answers.boy?.weight)} kg</p>
+                        ` : '<p class="member-portal-muted">Danışan ilk girişinde anketi tamamladığında bilgiler burada görünecek.</p>'}
+                        <button class="btn-secondary" type="button" onclick="window.openProfile(${member.id})">Üye kartını aç</button>
+                    </article>`;
+            }).join('');
+        }
+
         const icons = { 'Fitness': '💪', 'Karate': '🥋', 'Basketbol': '🏀', 'Yoga': '🧘', 'Fonksiyonel Egzersiz': '⚡' };
         grid.innerHTML = state.members.length ? state.members.map(m => `
             <div class="card member-card" onclick="window.openProfile(${m.id})">
@@ -1616,6 +1840,42 @@
             </div>
         `).join('') : '<div class="empty-state"><strong>Henüz danışan yok</strong><span>İlk danışanı ekleyerek başlayın.</span></div>';
     }
+
+    function renderAssessmentAdmin() {
+        const container = document.getElementById('assessment-admin-list');
+        if (!container) return;
+        if (!state.members.length) {
+            container.innerHTML = '<div class="empty-state"><strong>Henüz danışan yok</strong><span>Üye kaydı tamamlandığında değerlendirme burada görünecek.</span></div>';
+            return;
+        }
+        container.innerHTML = state.members.map(member => {
+            const completed = Boolean(member.degerlendirme_tamamlandi);
+            const answers = window.safeJSONParse(member.degerlendirme_verileri, {});
+            return `
+                <article class="card assessment-admin-card">
+                    <div class="member-card-top">
+                        <div>
+                            <span class="eyebrow">${completed ? 'TAMAMLANDI' : 'BEKLENİYOR'}</span>
+                            <h3>${escapePortalText(member.ad_soyad)}</h3>
+                        </div>
+                        <span aria-label="${completed ? 'Tamamlandı' : 'Bekleniyor'}">${completed ? '✓' : '…'}</span>
+                    </div>
+                    ${completed ? `
+                        <p><strong>Hedef:</strong> ${escapePortalText(member.beklentiler)}</p>
+                        <p><strong>Sağlık:</strong> ${escapePortalText(member.saglik_gecmisi)}</p>
+                        <p><strong>Hareket:</strong> ${escapePortalText(member.hareket_aliskanliklari)}</p>
+                        <p class="member-portal-muted">Boy: ${escapePortalText(member.boy)} cm · ${escapePortalText(answers.boy?.weight)} kg</p>
+                    ` : '<p class="member-portal-muted">Danışan ilk girişinde anketi tamamladığında bilgiler burada görünecek.</p>'}
+                    <button class="btn-secondary" type="button" onclick="window.openProfile(${member.id})">Üye kartını aç</button>
+                </article>`;
+        }).join('');
+    }
+
+    window.startSurvey = () => {
+        window.nav('assessment-view');
+        document.querySelectorAll('.nav-btn').forEach(button => button.classList.remove('active'));
+        document.getElementById('btn-survey')?.classList.add('active');
+    };
 
     window.renderExercises = () => {
         const container = document.getElementById('exercises-grid');

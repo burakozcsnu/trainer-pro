@@ -1448,6 +1448,104 @@ body,
     color: #ff5b67;
     border-color: rgba(255, 91, 103, 0.5);
 }
+
+.member-assessment {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.88);
+}
+.member-assessment[hidden] {
+    display: none;
+}
+.member-assessment-card {
+    width: min(94vw, 560px);
+    max-height: min(90dvh, 760px);
+    overflow-y: auto;
+    padding: clamp(1.25rem, 4vw, 2rem);
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 22px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+    animation: assessment-question-in 280ms ease both;
+}
+.member-assessment-progress {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.45rem;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+}
+.member-assessment-progress-bar {
+    height: 5px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+    background: var(--surface-raised);
+    border-radius: 99px;
+}
+.member-assessment-progress-bar span {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: var(--primary);
+    border-radius: inherit;
+    transition: width 260ms ease;
+}
+.member-assessment-question {
+    margin-bottom: 1.25rem;
+}
+.member-assessment-question h2 {
+    margin-bottom: 0.45rem;
+    color: var(--primary);
+    font-size: clamp(1.25rem, 4vw, 1.7rem);
+}
+.member-assessment-question p {
+    color: var(--text-dim);
+    font-size: 0.88rem;
+}
+.assessment-option-grid {
+    display: grid;
+    gap: 0.65rem;
+    margin-top: 1.15rem;
+}
+.assessment-option {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-height: 48px;
+    padding: 0.75rem 0.85rem;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+}
+.assessment-option:has(input:checked) {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: rgba(228, 186, 148, 0.1);
+}
+.assessment-option input {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+}
+.member-assessment-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+.member-assessment-actions button {
+    flex: 1;
+}
+@keyframes assessment-question-in {
+    from { opacity: 0; transform: translateX(18px); }
+    to { opacity: 1; transform: translateX(0); }
+}
 .auth-card {
     max-width: 420px;
 }

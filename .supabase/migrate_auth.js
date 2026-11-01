@@ -33,6 +33,12 @@ async function migrate() {
       await client.query(`DROP POLICY IF EXISTS "${table}_authenticated_access" ON ${table};`);
       await client.query(`DROP POLICY IF EXISTS "${table}_admin_access" ON ${table};`);
       await client.query(`DROP POLICY IF EXISTS "${table}_member_read" ON ${table};`);
+      if (table === 'uyeler') {
+        await client.query(`DROP POLICY IF EXISTS "uyeler_member_update" ON uyeler;`);
+      }
+      if (table === 'olcumler') {
+        await client.query(`DROP POLICY IF EXISTS "olcumler_member_insert" ON olcumler;`);
+      }
       await client.query(`
         CREATE POLICY "${table}_admin_access"
         ON ${table}
@@ -102,6 +108,23 @@ async function migrate() {
       FOR SELECT
       TO authenticated
       USING (auth.uid() = auth_user_id);
+
+      CREATE POLICY "uyeler_member_update"
+      ON uyeler
+      FOR UPDATE
+      TO authenticated
+      USING (auth.uid() = auth_user_id)
+      WITH CHECK (auth.uid() = auth_user_id);
+
+      CREATE POLICY "olcumler_member_insert"
+      ON olcumler
+      FOR INSERT
+      TO authenticated
+      WITH CHECK (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = olcumler.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
 
       CREATE POLICY "olcumler_member_read"
       ON olcumler
