@@ -458,10 +458,10 @@
             state.assessmentAnswers[question.key] = { height, weight };
             return true;
         }
-        if (question.type === 'multi') {
+        if (question.type === 'radio' || question.type === 'multi') {
             const values = [...document.querySelectorAll('input[name="assessment-option"]:checked')].map(input => input.value);
             if (!values.length) return false;
-            state.assessmentAnswers[question.key] = values;
+            state.assessmentAnswers[question.key] = question.type === 'radio' ? values[0] : values;
             return true;
         }
         const input = document.getElementById('assessment-answer');
