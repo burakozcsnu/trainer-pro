@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.100';
+    const APP_VERSION = '1.3.101';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -2134,21 +2134,32 @@
                 ${dayEntries.length ? dayEntries.map(item => {
                     const member = state.members.find(candidate => candidate.id == item.member_id);
                     const hasConflict = conflictIds.has(String(item.id));
+                    const hasInvalidTime = !isValidScheduleTime(item.start_time) ||
+                        (item.end_time && !isValidScheduleTime(item.end_time));
                     const conflictLabel = hasConflict
                         ? 'Bu üyenin başka bir seansıyla zaman çakışması var.'
                         : '';
-                    return `<button class="weekly-schedule-entry${hasConflict ? ' is-conflict' : ''}" type="button"
-                        aria-label="${escapePortalText(`${item.start_time.slice(0, 5)} ${member?.ad_soyad || 'Üye bulunamadı'} ${item.branch || ''} ${conflictLabel}`)}"
-                        title="${escapePortalText(conflictLabel)}"
+                    const invalidLabel = hasInvalidTime ? 'Saat bilgisi geçersiz, düzenlenmesi gerekiyor.' : '';
+                    const displayStart = isValidScheduleTime(item.start_time) ? item.start_time.slice(0, 5) : '--:--';
+                    const displayEnd = isValidScheduleTime(item.end_time) ? ` - ${item.end_time.slice(0, 5)}` : '';
+                    return `<button class="weekly-schedule-entry${hasConflict ? ' is-conflict' : ''}${hasInvalidTime ? ' is-invalid' : ''}" type="button"
+                        aria-label="${escapePortalText(`${displayStart} ${member?.ad_soyad || 'Üye bulunamadı'} ${item.branch || ''} ${conflictLabel} ${invalidLabel}`)}"
+                        title="${escapePortalText(`${conflictLabel} ${invalidLabel}`.trim())}"
                         onclick="window.openScheduleEditor(${item.id})">
-                        <strong>${escapePortalText(item.start_time.slice(0, 5))}${item.end_time ? ` - ${escapePortalText(item.end_time.slice(0, 5))}` : ''}</strong>
+                        <strong>${escapePortalText(displayStart)}${escapePortalText(displayEnd)}</strong>
                         <span>${escapePortalText(member?.ad_soyad || 'Üye bulunamadı')}</span>
-                        <small>${escapePortalText(item.branch)}${hasConflict ? ' · ÇAKIŞMA' : ''}</small>
+                        <small>${escapePortalText(item.branch)}${hasConflict ? ' · ÇAKIŞMA' : ''}${hasInvalidTime ? ' · SAATİ DÜZELT' : ''}</small>
                     </button>`;
                 }).join('') : '<p class="weekly-schedule-empty">Boş</p>'}
             </section>`;
         }).join('');
     }
+
+    const isValidScheduleTime = value => {
+        if (typeof value !== 'string' || !/^\d{2}:\d{2}/.test(value)) return false;
+        const [hours, minutes] = value.slice(0, 5).split(':').map(Number);
+        return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
+    };
 
     const timeToMinutes = value => {
         const [hours, minutes] = String(value || '').slice(0, 5).split(':').map(Number);
@@ -2160,6 +2171,10 @@
         : timeToMinutes(schedule.start_time) + 30;
 
     const schedulesOverlap = (left, right) => (
+        isValidScheduleTime(left.start_time) &&
+        isValidScheduleTime(right.start_time) &&
+        (!left.end_time || isValidScheduleTime(left.end_time)) &&
+        (!right.end_time || isValidScheduleTime(right.end_time)) &&
         Number(left.member_id) === Number(right.member_id) &&
         Number(left.day_of_week) === Number(right.day_of_week) &&
         timeToMinutes(left.start_time) < scheduleEndMinutes(right) &&
@@ -2235,7 +2250,7 @@
             end_time: row.querySelector('[data-schedule-end]').value,
             branch: row.querySelector('[data-schedule-branch]').value
         }));
-        if (!rows.length || rows.some(row => !row.start_time || !row.end_time)) {
+        if (!rows.length || rows.some(row => !isValidScheduleTime(row.start_time) || !isValidScheduleTime(row.end_time))) {
             alert('Lütfen her seans için gün, başlangıç ve bitiş saati seçin.');
             return;
         }
