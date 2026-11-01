@@ -16,6 +16,50 @@ const client = new Client({
   }
 });
 
+const exerciseCatalog = [
+  ['Air Squat', 'Fonksiyonel', 'Alt Ekstremite', ['Quad', 'Glute'], 'Vücut ağırlığı', 'Başlangıç'],
+  ['Reverse Lunge', 'Fonksiyonel', 'Alt Ekstremite', ['Quad', 'Glute'], 'Vücut ağırlığı', 'Başlangıç'],
+  ['Bulgarian Split Squat', 'Fitness', 'Alt Ekstremite', ['Quad', 'Glute'], 'Adjustable bench', 'Orta'],
+  ['Barbell Back Squat', 'Fitness', 'Alt Ekstremite', ['Quad', 'Glute'], 'Olympic bar, plates, power rack', 'Orta'],
+  ['Front Rack Reverse Lunge', 'Fitness', 'Alt Ekstremite', ['Quad', 'Glute'], 'Olympic bar, plates, power rack', 'Orta'],
+  ['Romanian Deadlift', 'Fitness', 'Alt Ekstremite', ['Hamstring', 'Glute'], 'Olympic bar, plates', 'Orta'],
+  ['Single-Leg Romanian Deadlift', 'Fitness', 'Alt Ekstremite', ['Hamstring', 'Glute'], 'Dumbbells', 'Orta'],
+  ['Kettlebell Swing', 'Fonksiyonel', 'Alt Ekstremite', ['Glute', 'Hamstring'], 'Kettlebells', 'Orta'],
+  ['Goblet Squat', 'Fitness', 'Alt Ekstremite', ['Quad', 'Glute'], 'Kettlebells, dumbbells', 'Başlangıç'],
+  ['Barbell Hip Thrust', 'Fitness', 'Alt Ekstremite', ['Glute'], 'Olympic bar, plates, adjustable bench', 'Orta'],
+  ['Push-Up', 'Calisthenics', 'Üst Ekstremite', ['Göğüs', 'Triceps'], 'Vücut ağırlığı', 'Başlangıç'],
+  ['Pull-Up', 'Calisthenics', 'Üst Ekstremite', ['Sırt', 'Biceps'], 'Pullup bar', 'İleri'],
+  ['Band-Assisted Pull-Up', 'Calisthenics', 'Üst Ekstremite', ['Sırt', 'Biceps'], 'Pullup bar, resistance bands', 'Başlangıç'],
+  ['Dips', 'Calisthenics', 'Üst Ekstremite', ['Göğüs', 'Triceps'], 'Dips bar', 'Orta'],
+  ['Pike Push-Up', 'Calisthenics', 'Üst Ekstremite', ['Omuz', 'Triceps'], 'Vücut ağırlığı', 'Orta'],
+  ['Dumbbell Floor Press', 'Fitness', 'Üst Ekstremite', ['Göğüs', 'Triceps'], 'Dumbbells', 'Başlangıç'],
+  ['Barbell Overhead Press', 'Fitness', 'Üst Ekstremite', ['Omuz', 'Triceps'], 'Olympic bar, plates, power rack', 'Orta'],
+  ['One-Arm Dumbbell Row', 'Fitness', 'Üst Ekstremite', ['Sırt', 'Biceps'], 'Dumbbell, adjustable bench', 'Başlangıç'],
+  ['Landmine Press', 'Fitness', 'Üst Ekstremite', ['Omuz', 'Göğüs'], 'Landmine, Olympic bar', 'Orta'],
+  ['Band Face Pull', 'Corrective', 'Üst Ekstremite', ['Omuz', 'Sırt'], 'Resistance bands', 'Başlangıç'],
+  ['Medicine Ball Slam', 'Plyometrics', 'Tüm Vücut', ['Omuz', 'Core'], 'Medicine balls', 'Başlangıç'],
+  ['Box Jump', 'Plyometrics', 'Alt Ekstremite', ['Quad', 'Glute', 'Calf'], 'Jump box', 'Orta'],
+  ['Lateral Bound', 'Plyometrics', 'Alt Ekstremite', ['Glute', 'Calf'], 'Vücut ağırlığı', 'Orta'],
+  ['Jump Rope Basic Bounce', 'Plyometrics', 'Tüm Vücut', ['Calf'], 'Jump rope', 'Başlangıç'],
+  ['Sled Push', 'Fonksiyonel', 'Tüm Vücut', ['Quad', 'Glute'], 'Sled', 'Orta'],
+  ['Battle Rope Alternating Waves', 'Fonksiyonel', 'Tüm Vücut', ['Omuz', 'Core'], 'CrossFit conditioning rope', 'Başlangıç'],
+  ['Dead Bug', 'Corrective', 'Tüm Vücut', ['Core'], 'Vücut ağırlığı', 'Başlangıç'],
+  ['Side Plank', 'Corrective', 'Tüm Vücut', ['Core'], 'Vücut ağırlığı', 'Başlangıç'],
+  ['Wall Slide', 'Corrective', 'Üst Ekstremite', ['Omuz', 'Sırt'], 'Swedish wall bars', 'Başlangıç'],
+  ['90/90 Hip Switch', 'Mobility', 'Alt Ekstremite', ['Glute'], 'Vücut ağırlığı', 'Başlangıç'],
+  ['World’s Greatest Stretch', 'Mobility', 'Tüm Vücut', ['Hamstring', 'Glute'], 'Vücut ağırlığı', 'Başlangıç'],
+  ['Cat-Cow Flow', 'Yoga', 'Tüm Vücut', ['Core'], 'Vücut ağırlığı', 'Başlangıç'],
+  ['Downward Dog', 'Yoga', 'Tüm Vücut', ['Hamstring', 'Calf'], 'Vücut ağırlığı', 'Başlangıç'],
+  ['Karate Front Kick Drill', 'Karate', 'Tüm Vücut', ['Core', 'Quad'], 'Mitt and strike pads', 'Başlangıç'],
+  ['Karate Roundhouse Kick Drill', 'Karate', 'Tüm Vücut', ['Glute', 'Core'], 'Mitt and strike pads', 'Orta'],
+  ['Kickboxing Jab-Cross Drill', 'Kickboks', 'Üst Ekstremite', ['Omuz', 'Core'], 'Punching bag, mitts', 'Başlangıç'],
+  ['Kickboxing Pad Combination', 'Kickboks', 'Tüm Vücut', ['Omuz', 'Core'], 'Mitts and strike pads', 'Orta'],
+  ['Landmine Rotation', 'Fonksiyonel', 'Tüm Vücut', ['Core', 'Omuz'], 'Landmine, Olympic bar', 'Orta'],
+  ['Band Pallof Press', 'Corrective', 'Tüm Vücut', ['Core'], 'Resistance bands', 'Başlangıç'],
+  ['Step-Up', 'Fonksiyonel', 'Alt Ekstremite', ['Quad', 'Glute'], 'Step board', 'Başlangıç'],
+  ['Bear Crawl', 'Calisthenics', 'Tüm Vücut', ['Omuz', 'Core'], 'Vücut ağırlığı', 'Orta']
+];
+
 async function migrate() {
   try {
     await client.connect();
@@ -155,6 +199,18 @@ async function migrate() {
 
       NOTIFY pgrst, 'reload schema';
     `);
+    for (const [index, [name, branch, bodyPart, muscles, equipment, level]] of exerciseCatalog.entries()) {
+      await client.query(`
+        INSERT INTO master_egzersizler (id, ad, brans, gruplar)
+        VALUES ($1, $2, $3, $4::jsonb)
+        ON CONFLICT (id) DO UPDATE SET ad = EXCLUDED.ad, brans = EXCLUDED.brans, gruplar = EXCLUDED.gruplar
+      `, [
+        910000000000 + index,
+        name,
+        branch,
+        JSON.stringify({ bodyPart, muscles, branch, equipment, level, source: 'Zen Wellness Club core library' })
+      ]);
+    }
     console.log('Migration successful.');
 
   } catch (err) {

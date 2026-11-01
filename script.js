@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.104';
+    const APP_VERSION = '1.3.105';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -2573,6 +2573,7 @@
         const filterBodyPart = document.getElementById('filter-ex-bodypart')?.value || '';
         const filterMuscle = document.getElementById('filter-ex-muscle')?.value || '';
         const filterBranch = document.getElementById('filter-ex-branch')?.value || '';
+        const filterEquipment = document.getElementById('filter-ex-equipment')?.value || '';
 
         const groups = { 'Üst Ekstremite': [], 'Alt Ekstremite': [], 'Branşa Özel': [], 'Genel': [] };
 
@@ -2581,10 +2582,12 @@
             const exBodyPart = g.bodyPart || '';
             const exMuscles = g.muscles || [];
             const exBranch = g.branch || ex.brans || 'Fitness';
+            const exEquipment = g.equipment || '';
 
             if (filterBodyPart && exBodyPart !== filterBodyPart) return;
             if (filterMuscle && !exMuscles.includes(filterMuscle)) return;
             if (filterBranch && exBranch !== filterBranch) return;
+            if (filterEquipment && !exEquipment.split(',').map(item => item.trim()).includes(filterEquipment)) return;
 
             if (exBodyPart === 'Üst Ekstremite') groups['Üst Ekstremite'].push(ex);
             else if (exBodyPart === 'Alt Ekstremite') groups['Alt Ekstremite'].push(ex);
@@ -2614,6 +2617,8 @@
                             if (g.muscles) g.muscles.forEach(m => tagsHtml += `<span class="tag secondary">${m}</span>`);
                             if (g.branch) tagsHtml += `<span class="tag accent">${g.branch}</span>`;
                             else if (ex.brans) tagsHtml += `<span class="tag accent">${ex.brans}</span>`;
+                            if (g.equipment) tagsHtml += `<span class="tag">${g.equipment}</span>`;
+                            if (g.level) tagsHtml += `<span class="tag secondary">${g.level}</span>`;
 
                             return `
                             <div class="card">
@@ -2858,6 +2863,8 @@
         document.getElementById('group-body-part').value = g.bodyPart || '';
         window.toggleBodyPartOptions(g.bodyPart || '', g.muscles || []);
         document.getElementById('new-ex-branch').value = g.branch || ex.brans || 'Fitness';
+        document.getElementById('new-ex-equipment').value = g.equipment || '';
+        document.getElementById('new-ex-level').value = g.level || 'Başlangıç';
         window.openModal('modal-new-exercise');
     };
 
@@ -2866,7 +2873,11 @@
         const grid = document.getElementById('muscles-checkboxes');
         grid.innerHTML = '';
         if (!val) { container.style.display = 'none'; return; }
-        const options = { 'Üst Ekstremite': ['Göğüs', 'Omuz', 'Sırt', 'Biceps', 'Triceps', 'Ön Kol'], 'Alt Ekstremite': ['Glute', 'Hamstring', 'Quad', 'Calf'] };
+        const options = {
+            'Üst Ekstremite': ['Göğüs', 'Omuz', 'Sırt', 'Biceps', 'Triceps', 'Ön Kol'],
+            'Alt Ekstremite': ['Glute', 'Hamstring', 'Quad', 'Calf'],
+            'Tüm Vücut': ['Core', 'Göğüs', 'Omuz', 'Sırt', 'Glute', 'Hamstring', 'Quad', 'Calf']
+        };
         const muscles = options[val] || [];
         grid.innerHTML = muscles.map(m => `
             <label class="check-item">
@@ -2882,7 +2893,13 @@
         const existingId = document.getElementById('edit-ex-id').value;
         const id = existingId || Date.now();
         const muscles = Array.from(document.querySelectorAll('input[name="muscle"]:checked')).map(cb => cb.value);
-        const gruplar = { bodyPart: document.getElementById('group-body-part').value, branch: document.getElementById('new-ex-branch').value, muscles };
+        const gruplar = {
+            bodyPart: document.getElementById('group-body-part').value,
+            branch: document.getElementById('new-ex-branch').value,
+            muscles,
+            equipment: document.getElementById('new-ex-equipment').value.trim(),
+            level: document.getElementById('new-ex-level').value
+        };
         const newData = { id, ad: document.getElementById('new-ex-name').value, brans: gruplar.branch, gruplar: JSON.stringify(gruplar) };
         await supabase.from('master_egzersizler').upsert(newData);
         const oldData = existingId ? state.exercises.find(ex => ex.id == existingId) : null;
