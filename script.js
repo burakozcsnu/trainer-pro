@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.110';
+    const APP_VERSION = '1.3.111';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -157,7 +157,7 @@
         loadMemberPortal();
     };
     const createScheduleNotification = async ({ memberId, scheduleId = null, action, message }) => {
-        const { error } = await supabase.from('schedule_notifications').insert({
+        const { error } = await dataService.mutate('schedule_notifications', 'insert', {
             id: Date.now(),
             member_id: memberId,
             schedule_id: scheduleId,
@@ -206,6 +206,14 @@
 
     const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
     const dataService = window.TrainerProDataService.create(supabase);
+    window.addEventListener('trainerpro-sync-queue', event => {
+        const pending = event.detail?.pending || 0;
+        if (pending > 0) setSyncStatus('syncing', `${pending} çevrimdışı işlem bekliyor`);
+        else if (navigator.onLine) {
+            setSyncStatus('online', 'Senkronize edildi');
+            sync().catch(error => handleError(error, 'Queued sync refresh'));
+        }
+    });
     supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
             window.setTimeout(async () => {
@@ -401,7 +409,7 @@
             applicationServerKey: decodeVapidKey(CONFIG.VAPID_PUBLIC_KEY)
         });
         const { endpoint, keys } = subscription.toJSON();
-        const { error } = await supabase.from('push_subscriptions').upsert({
+        const { error } = await dataService.mutate('push_subscriptions', 'upsert', {
             id: Date.now(),
             member_id: member.id,
             endpoint,
@@ -697,14 +705,14 @@
 
     window.toggleScheduleAttendance = async (scheduleId, occurrenceDate, status) => {
         if (!activeMemberPortalMemberId) return;
-        const { error } = await supabase.from('schedule_attendance').upsert({
+        const { error } = await dataService.mutate('schedule_attendance', 'upsert', {
             id: Date.now(),
             member_id: activeMemberPortalMemberId,
             schedule_id: scheduleId,
             occurrence_date: occurrenceDate,
             status,
             updated_at: new Date().toISOString()
-        }, { onConflict: 'member_id,schedule_id,occurrence_date' });
+        });
         if (error) {
             handleError(error, 'Schedule attendance');
             alert(`Katılım durumu kaydedilemedi: ${error.message}`);
@@ -715,7 +723,7 @@
 
     window.toggleWorkoutExercise = async (workoutId, exerciseIndex, completed) => {
         if (!activeMemberPortalMemberId) return;
-        const { error } = await supabase.from('workout_completions').upsert({
+        const { error } = await dataService.mutate('workout_completions', 'upsert', {
             id: Date.now(),
             member_id: activeMemberPortalMemberId,
             workout_id: workoutId,
@@ -723,7 +731,7 @@
             completion_date: new Date().toISOString().slice(0, 10),
             completed,
             updated_at: new Date().toISOString()
-        }, { onConflict: 'member_id,workout_id,exercise_index,completion_date' });
+        });
         if (error) {
             handleError(error, 'Workout completion');
             alert(`Egzersiz durumu kaydedilemedi: ${error.message}`);
@@ -917,8 +925,11 @@
             l_leg: age
         };
         const [memberResult, measurementResult] = await Promise.all([
-            supabase.from('uyeler').update(memberUpdate).eq('id', member.id).eq('auth_user_id', member.auth_user_id),
-            supabase.from('olcumler').upsert(measurement)
+            dataService.mutate('uyeler', 'update', memberUpdate, {
+                id: member.id,
+                expectedUpdatedAt: member.updated_at
+            }),
+            dataService.mutate('olcumler', 'upsert', measurement)
         ]);
         if (memberResult.error || measurementResult.error) {
             handleError(memberResult.error || measurementResult.error, 'Member assessment save');
@@ -1711,7 +1722,8 @@
             karbonhidrat: parseFloat(document.getElementById('new-f-carb').value) || 0,
             yag: parseFloat(document.getElementById('new-f-fat').value) || 0
         };
-        await supabase.from('master_besinler').upsert(newData);
+        const result = await dataService.mutate('master_besinler', 'upsert', newData);
+        if (result.error) throw result.error;
         const oldData = existingId ? state.foods.find(f => f.id == existingId) : null;
         window.pushToUndoLog(existingId ? 'UPDATE' : 'INSERT', 'master_besinler', oldData, newData, `Besin: ${newData.ad}`);
         await sync();
@@ -1721,7 +1733,8 @@
     window.deleteFood = async (id) => {
         if (confirm("Silinsin mi?")) {
             const oldData = state.foods.find(f => f.id == id);
-            await supabase.from('master_besinler').delete().eq('id', id);
+            const result = await dataService.mutate('master_besinler', 'delete', null, { id });
+            if (result.error) throw result.error;
             window.pushToUndoLog('DELETE', 'master_besinler', oldData, null, `Besin Silindi: ${oldData.ad}`);
             await sync();
         }
@@ -2053,7 +2066,8 @@
             plan_adi: document.getElementById('d-name').value,
             ogunler: JSON.stringify(ogunler)
         };
-        await supabase.from('beslenme_planlari').upsert(d);
+        const dietResult = await dataService.mutate('beslenme_planlari', 'upsert', d);
+        if (dietResult.error) throw dietResult.error;
         window.pushToUndoLog('INSERT', 'beslenme_planlari', null, d, `Beslenme Planı: ${d.plan_adi}`);
         await sync();
         window.closeModal('modal-diet');
@@ -2152,7 +2166,8 @@
     window.deleteDietPlan = async (id) => {
         if (confirm("Silinsin mi?")) {
             const oldData = state.diets.find(d => d.id == id);
-            await supabase.from('beslenme_planlari').delete().eq('id', id);
+            const result = await dataService.mutate('beslenme_planlari', 'delete', null, { id });
+            if (result.error) throw result.error;
             window.pushToUndoLog('DELETE', 'beslenme_planlari', oldData, null, `Plan Silindi: ${oldData.plan_adi}`);
             await sync();
         }
@@ -2526,8 +2541,7 @@
             ...baseData, ...row,
             id: id && index === 0 ? id : Date.now() + index
         }));
-        const { error } = await supabase.from('weekly_program_schedule')
-            .upsert(entries, { onConflict: 'member_id,day_of_week,start_time' });
+        const { error } = await dataService.mutate('weekly_program_schedule', 'upsert', entries);
         if (error) {
             handleError(error, 'Schedule save');
             alert(`Çizelge kaydedilemedi: ${error.message}`);
@@ -2542,7 +2556,7 @@
         const member = state.members.find(item => item.id == memberId);
         const primaryBranch = rows[0].branch;
         if (member && member.brans !== primaryBranch) {
-            const { error: memberError } = await supabase.from('uyeler').update({ brans: primaryBranch }).eq('id', memberId);
+            const { error: memberError } = await dataService.mutate('uyeler', 'update', { brans: primaryBranch }, { id: memberId });
             if (memberError) {
                 handleError(memberError, 'Schedule member branch update');
                 alert(`Seans kaydedildi ancak üye branşı güncellenemedi: ${memberError.message}`);
@@ -2556,7 +2570,7 @@
         const id = document.getElementById('schedule-id').value;
         if (!id || !confirm('Bu seans çizelgeden silinsin mi?')) return;
         const deletedEntry = state.schedules.find(item => String(item.id) === String(id));
-        const { error } = await supabase.from('weekly_program_schedule').delete().eq('id', id);
+        const { error } = await dataService.mutate('weekly_program_schedule', 'delete', null, { id });
         if (error) {
             handleError(error, 'Schedule delete');
             alert(`Seans silinemedi: ${error.message}`);
@@ -2945,7 +2959,7 @@
             cinsiyet: document.getElementById('m-gender').value,
             kayit_tarihi: document.getElementById('m-reg-date').value
         };
-        const { error } = await supabase.from('uyeler').upsert(m);
+        const { error } = await dataService.mutate('uyeler', 'upsert', m);
         if (error) {
             console.error('[Member save] Supabase error:', error);
             alert(`Üye kaydedilemedi: ${error.message}`);
@@ -3014,7 +3028,7 @@
             drill: gruplar.drill || null,
             difficulty: gruplar.level || null
         };
-        const { error } = await supabase.from('master_egzersizler').upsert(newData);
+        const { error } = await dataService.mutate('master_egzersizler', 'upsert', newData);
         if (error) {
             console.error('[Exercise save] Supabase error:', error);
             alert(`Egzersiz kaydedilemedi: ${error.message}`);
@@ -3114,7 +3128,8 @@
         m.r_leg = parseFloat(document.getElementById('c-rhr').value) || null; // r_leg stores RHR
         m.hips = parseFloat(document.getElementById('c-cooper').value) || null; // hips stores Step Test HR
 
-        await supabase.from('olcumler').upsert(m);
+        const measurementResult = await dataService.mutate('olcumler', 'upsert', m);
+        if (measurementResult.error) throw measurementResult.error;
         const oldData = existingId || datedMeasurement ? state.measurements.find(x => x.id == (existingId || datedMeasurement.id)) : null;
         window.pushToUndoLog(oldData ? 'UPDATE' : 'INSERT', 'olcumler', oldData, m, `Kardiyo Testi: ${m.tarih}`);
         await sync();
@@ -3307,7 +3322,8 @@ window.editMeasurement = (id) => {
             m = freshData;
         }
 
-        await supabase.from('olcumler').upsert(m);
+        const measurementResult = await dataService.mutate('olcumler', 'upsert', m);
+        if (measurementResult.error) throw measurementResult.error;
         const oldData = existingId ? state.measurements.find(x => x.id == existingId) : null;
         window.pushToUndoLog(existingId ? 'UPDATE' : 'INSERT', 'olcumler', oldData, m, `Ölçüm: ${m.tarih}`);
         state.measurementRequired = false;
@@ -3465,7 +3481,8 @@ window.editMeasurement = (id) => {
             setler: JSON.stringify(setler)
         };
 
-        await supabase.from('antrenmanlar').upsert(w);
+        const workoutResult = await dataService.mutate('antrenmanlar', 'upsert', w);
+        if (workoutResult.error) throw workoutResult.error;
         window.pushToUndoLog('INSERT', 'antrenmanlar', null, w, `Antrenman Kaydedildi: ${w.sablon}`);
         await sync();
         window.closeModal('modal-workout');
@@ -3501,7 +3518,8 @@ window.editMeasurement = (id) => {
         const p = { id, program_adi: name, detaylar: JSON.stringify(details) };
         const oldData = existingId ? state.programs.find(prog => prog.id == existingId) : null;
 
-        await supabase.from('programlar').upsert(p);
+        const programResult = await dataService.mutate('programlar', 'upsert', p);
+        if (programResult.error) throw programResult.error;
         window.pushToUndoLog(existingId ? 'UPDATE' : 'INSERT', 'programlar', oldData, p, `Şablon: ${name}`);
 
         await sync();
@@ -3784,11 +3802,11 @@ window.editMeasurement = (id) => {
 };
 
     // --- DELETES ---
-    window.deleteWorkout = async (id) => { if (confirm("Silinsin mi?")) { const oldData = state.workouts.find(w => w.id == id); await supabase.from('antrenmanlar').delete().eq('id', id); window.pushToUndoLog('DELETE', 'antrenmanlar', oldData, null, `Antrenman Silindi: ${oldData.sablon}`); await sync(); } };
-    window.deleteMeasurement = async (id) => { if (confirm("Silinsin mi?")) { const oldData = state.measurements.find(m => m.id == id); await supabase.from('olcumler').delete().eq('id', id); window.pushToUndoLog('DELETE', 'olcumler', oldData, null, `Ölçüm Silindi`); await sync(); } };
-    window.deleteExercise = async (id) => { if (confirm("Silinsin mi?")) { const oldData = state.exercises.find(e => e.id == id); await supabase.from('master_egzersizler').delete().eq('id', id); window.pushToUndoLog('DELETE', 'master_egzersizler', oldData, null, `Egzersiz Silindi: ${oldData.ad}`); await sync(); } };
-    window.deleteProgram = async (id) => { if (confirm("Silinsin mi?")) { const oldData = state.programs.find(p => p.id == id); await supabase.from('programlar').delete().eq('id', id); window.pushToUndoLog('DELETE', 'programlar', oldData, null, `Şablon Silindi: ${oldData.program_adi}`); await sync(); } };
-    window.deleteMember = async (id) => { if (confirm("Bu üyeyi silmek istediğinize emin misiniz?")) { const oldData = state.members.find(m => m.id == id); await supabase.from('uyeler').delete().eq('id', id); window.pushToUndoLog('DELETE', 'uyeler', oldData, null, `Üye Silindi: ${oldData.ad_soyad}`); await sync(); } };
+    window.deleteWorkout = async (id) => { if (confirm("Silinsin mi?")) { const oldData = state.workouts.find(w => w.id == id); const result = await dataService.mutate('antrenmanlar', 'delete', null, { id }); if (result.error) throw result.error; window.pushToUndoLog('DELETE', 'antrenmanlar', oldData, null, `Antrenman Silindi: ${oldData.sablon}`); await sync(); } };
+    window.deleteMeasurement = async (id) => { if (confirm("Silinsin mi?")) { const oldData = state.measurements.find(m => m.id == id); const result = await dataService.mutate('olcumler', 'delete', null, { id }); if (result.error) throw result.error; window.pushToUndoLog('DELETE', 'olcumler', oldData, null, `Ölçüm Silindi`); await sync(); } };
+    window.deleteExercise = async (id) => { if (confirm("Silinsin mi?")) { const oldData = state.exercises.find(e => e.id == id); const result = await dataService.mutate('master_egzersizler', 'delete', null, { id }); if (result.error) throw result.error; window.pushToUndoLog('DELETE', 'master_egzersizler', oldData, null, `Egzersiz Silindi: ${oldData.ad}`); await sync(); } };
+    window.deleteProgram = async (id) => { if (confirm("Silinsin mi?")) { const oldData = state.programs.find(p => p.id == id); const result = await dataService.mutate('programlar', 'delete', null, { id }); if (result.error) throw result.error; window.pushToUndoLog('DELETE', 'programlar', oldData, null, `Şablon Silindi: ${oldData.program_adi}`); await sync(); } };
+    window.deleteMember = async (id) => { if (confirm("Bu üyeyi silmek istediğinize emin misiniz?")) { const oldData = state.members.find(m => m.id == id); const result = await dataService.mutate('uyeler', 'delete', null, { id }); if (result.error) throw result.error; window.pushToUndoLog('DELETE', 'uyeler', oldData, null, `Üye Silindi: ${oldData.ad_soyad}`); await sync(); } };
 
     // --- DOCUMENTS ---
 
@@ -3823,6 +3841,10 @@ window.editMeasurement = (id) => {
 
     window.uploadDocument = async (e) => {
         e.preventDefault();
+        if (!navigator.onLine) {
+            alert('Belge yüklemek için internet bağlantısı gereklidir. Diğer değişiklikler çevrimdışı kuyruğa alınabilir.');
+            return;
+        }
         const file = document.getElementById('doc-file').files[0];
         const name = document.getElementById('doc-name').value;
         const type = document.getElementById('doc-type').value;
