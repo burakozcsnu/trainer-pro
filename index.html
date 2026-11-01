@@ -791,17 +791,15 @@
                     <input type="hidden" id="schedule-id">
                     <label for="schedule-member">Üye</label>
                     <select id="schedule-member" required></select>
-                    <label for="schedule-day">Gün</label>
-                    <select id="schedule-day" required>
-                        <option value="1">Pazartesi</option><option value="2">Salı</option>
-                        <option value="3">Çarşamba</option><option value="4">Perşembe</option>
-                        <option value="5">Cuma</option><option value="6">Cumartesi</option>
-                        <option value="7">Pazar</option>
-                    </select>
-                    <div class="grid" style="grid-template-columns:1fr 1fr; gap:0.6rem;">
-                        <label for="schedule-start">Başlangıç<input id="schedule-start" type="time" required></label>
-                        <label for="schedule-end">Bitiş<input id="schedule-end" type="time"></label>
-                    </div>
+                    <fieldset class="schedule-picker">
+                        <legend>Günler <span>(birden fazla seçebilirsiniz)</span></legend>
+                        <div id="schedule-days-grid" class="schedule-choice-grid schedule-day-choice-grid"></div>
+                    </fieldset>
+                    <fieldset class="schedule-picker">
+                        <legend>Saatler <span>(30 dakikalık bloklar)</span></legend>
+                        <div id="schedule-times-grid" class="schedule-choice-grid schedule-time-choice-grid"></div>
+                    </fieldset>
+                    <label for="schedule-end">Bitiş (opsiyonel)<input id="schedule-end" type="time"></label>
                     <label for="schedule-branch">Branş</label>
                     <select id="schedule-branch" required>
                         <option value="Fitness">Fitness</option><option value="Karate">Karate</option>
@@ -843,7 +841,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.3.88"></script>
+    <script src="script.js?v=1.3.90"></script>
 </body>
 
 </html>

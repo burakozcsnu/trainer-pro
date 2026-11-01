@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.88';
+    const APP_VERSION = '1.3.90';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -1855,6 +1855,28 @@
         [5, 'Cuma'], [6, 'Cumartesi'], [7, 'Pazar']
     ];
     const getScheduleDayName = day => scheduleDays.find(([value]) => value === Number(day))?.[1] || 'Gün';
+    const scheduleTimes = Array.from({ length: 29 }, (_, index) => {
+        const totalMinutes = (6 * 60) + (index * 30);
+        return `${String(Math.floor(totalMinutes / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`;
+    });
+
+    function renderScheduleChoices(selectedDays = [], selectedTimes = []) {
+        const dayGrid = document.getElementById('schedule-days-grid');
+        const timeGrid = document.getElementById('schedule-times-grid');
+        if (!dayGrid || !timeGrid) return;
+        const selectedDaySet = new Set(selectedDays.map(Number));
+        const selectedTimeSet = new Set(selectedTimes);
+        dayGrid.innerHTML = scheduleDays.map(([value, label]) => `
+            <label class="schedule-choice">
+                <input type="checkbox" name="schedule-days" value="${value}" ${selectedDaySet.has(value) ? 'checked' : ''}>
+                <span>${label}</span>
+            </label>`).join('');
+        timeGrid.innerHTML = scheduleTimes.map(time => `
+            <label class="schedule-choice schedule-time-choice">
+                <input type="checkbox" name="schedule-times" value="${time}" ${selectedTimeSet.has(time) ? 'checked' : ''}>
+                <span>${time}</span>
+            </label>`).join('');
+    }
 
     function renderWeeklySchedule() {
         const container = document.getElementById('weekly-schedule-grid');
@@ -1896,8 +1918,7 @@
         document.getElementById('schedule-modal-title').textContent = entry ? 'Seansı düzenle' : 'Haftalık programa ekle';
         document.getElementById('schedule-id').value = entry?.id || '';
         populateScheduleMembers(entry?.member_id || '');
-        document.getElementById('schedule-day').value = entry?.day_of_week || '1';
-        document.getElementById('schedule-start').value = entry?.start_time?.slice(0, 5) || '';
+        renderScheduleChoices(entry ? [entry.day_of_week] : [], entry ? [entry.start_time.slice(0, 5)] : []);
         document.getElementById('schedule-end').value = entry?.end_time?.slice(0, 5) || '';
         document.getElementById('schedule-branch').value = entry?.branch || 'Fitness';
         document.getElementById('schedule-notes').value = entry?.notes || '';
@@ -1907,20 +1928,36 @@
 
     window.saveScheduleEntry = async event => {
         event.preventDefault();
-        const id = document.getElementById('schedule-id').value || Date.now();
+        const id = document.getElementById('schedule-id').value;
         const memberId = document.getElementById('schedule-member').value;
         const branch = document.getElementById('schedule-branch').value;
-        const data = {
-            id,
+        const selectedDays = [...document.querySelectorAll('input[name="schedule-days"]:checked')].map(input => Number(input.value));
+        const selectedTimes = [...document.querySelectorAll('input[name="schedule-times"]:checked')].map(input => input.value);
+        if (!selectedDays.length || !selectedTimes.length) {
+            alert('Lütfen en az bir gün ve bir saat seçin.');
+            return;
+        }
+        if (id && (selectedDays.length !== 1 || selectedTimes.length !== 1)) {
+            alert('Mevcut seansı düzenlerken yalnızca bir gün ve bir saat seçebilirsiniz.');
+            return;
+        }
+        const baseData = {
             member_id: memberId,
-            day_of_week: Number(document.getElementById('schedule-day').value),
-            start_time: document.getElementById('schedule-start').value,
             end_time: document.getElementById('schedule-end').value || null,
             branch,
             notes: document.getElementById('schedule-notes').value.trim(),
             updated_at: new Date().toISOString()
         };
-        const { error } = await supabase.from('weekly_program_schedule').upsert(data);
+        const entries = id
+            ? [{ ...baseData, id, day_of_week: selectedDays[0], start_time: selectedTimes[0] }]
+            : selectedDays.flatMap(day => selectedTimes.map((time, index) => ({
+                ...baseData,
+                id: Date.now() + (day * 100) + index,
+                day_of_week: day,
+                start_time: time
+            })));
+        const { error } = await supabase.from('weekly_program_schedule')
+            .upsert(entries, { onConflict: 'member_id,day_of_week,start_time' });
         if (error) {
             handleError(error, 'Schedule save');
             alert(`Çizelge kaydedilemedi: ${error.message}`);
