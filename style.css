@@ -212,18 +212,18 @@ canvas#mainChart {
 .workout-timer-panel { background: var(--surface); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--primary); display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
 .timer-display { font-family: monospace; font-size: 2.5rem; color: var(--primary); }
 /* Live Workout Insights & Rows */
-.set-row-wrapper { 
-    background: rgba(255,255,255,0.01); 
-    padding: 1rem; 
-    border-radius: 15px; 
+.set-row-wrapper {
+    background: rgba(255,255,255,0.01);
+    padding: 1rem;
+    border-radius: 15px;
     border: 1px solid var(--border);
     margin-bottom: 1rem;
 }
-.set-row { 
-    display: grid; 
-    grid-template-columns: 1fr 150px 100px 100px 120px 44px; 
-    gap: 0.8rem; 
-    align-items: center; 
+.set-row {
+    display: grid;
+    grid-template-columns: 1fr 150px 100px 100px 120px 44px;
+    gap: 0.8rem;
+    align-items: center;
 }
 .last-perf-hint {
     background: rgba(0, 242, 254, 0.05);
@@ -285,15 +285,22 @@ canvas#mainChart {
 .check-item span { font-size: 0.9rem; }
 /* Tüm popup pencerelerini ekrana sığdır ve içerik taşarsa kaydırılabilir yap */
 .modal-content, .modal-body {
-    max-height: 85vh !important; 
-    overflow-y: auto !important; 
+    max-height: 85vh !important;
+    overflow-y: auto !important;
     overflow-x: hidden !important;
     padding-bottom: 2rem !important; /* Butonların en altta kesilmemesi için boşluk */
 }
 
-/* Phone layout */
-@media (max-width: 600px) {
+/* Phone & iPad layout overrides */
+@media (max-width: 820px) {
     :root { --touch-target: 44px; }
+
+    /* Ensure modal doesn't get hidden under keyboard on iPad/iPhone */
+    .modal-content, .modal-content.wide {
+        margin-top: env(safe-area-inset-top, 2vh);
+        margin-bottom: env(safe-area-inset-bottom, 2vh);
+        max-height: calc(100dvh - env(safe-area-inset-bottom) - env(safe-area-inset-top) - 1rem) !important;
+    }
 
     body { overflow: hidden; }
     .app-wrapper { height: 100dvh; min-height: 100vh; flex-direction: column; }
@@ -424,6 +431,28 @@ canvas#mainChart {
 
     input, select, button { font-size: 16px; }
     button, .btn-primary, .btn-secondary, .btn-delete, .btn-view { min-height: var(--touch-target); }
+}
+
+/* iOS/iPad Smooth Scrolling & SafeArea Optimization */
+body, .app-wrapper, .view-content, .tab-content, .modal-content {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure inputs above keyboard */
+.modal-content, .modal-body {
+    scroll-behavior: smooth;
+}
+
+/* Base Form Styling Fix for iOS zoom */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+select, textarea {
+    font-size: 16px !important; /* Prevents auto-zoom on iOS */
+    appearance: none;
+    -webkit-appearance: none;
 }
 
 /* Minimal Slate visual system */

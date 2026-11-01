@@ -20,7 +20,7 @@
     <meta name="apple-mobile-web-app-title" content="Zen Wellness Club">
     <link rel="apple-touch-icon" href="zen-wellness-icon.png?v=1.0">
 
-    <link rel="stylesheet" href="style.css?v=1.9.15">
+    <link rel="stylesheet" href="style.css?v=1.9.16">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     </head>
@@ -200,12 +200,15 @@
                 <div class="profile-content-wrapper">
                     <!-- TAB: Gelişim Dashboard -->
                     <div id="tab-analytics" class="tab-content active">
-                        <div class="section-intro">
+                        <div class="section-intro" style="display:flex; justify-content:space-between; align-items:flex-start;">
                             <div>
                                 <span class="eyebrow">GENEL BAKIŞ</span>
                                 <h2>Gelişim özeti</h2>
+                                <p style="margin-top:0.2rem;">Son ölçüm ve antrenman verilerini tek bakışta takip edin.</p>
                             </div>
-                            <p>Son ölçüm ve antrenman verilerini tek bakışta takip edin.</p>
+                            <button class="btn-secondary" onclick="window.generateMemberReport()" style="font-size:0.8rem; display:flex; align-items:center; gap:0.4rem;">
+                                <span>📤</span> Raporu Kopyala
+                            </button>
                         </div>
                         <div class="dashboard-stats-grid"
                             style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
@@ -754,7 +757,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.3.85"></script>
+    <script src="script.js?v=1.3.86"></script>
 </body>
 
 </html>

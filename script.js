@@ -1,12 +1,12 @@
 /**
  * Zen Wellness Club - Yönetici SPA
  * Optimized for Batoner Mobile App Studios Standards
- * Version 1.3.35 - Modal Workout Edition
+ * Version 1.3.86 - Modal Workout Edition
  */
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.70';
+    const APP_VERSION = '1.3.86';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -73,8 +73,6 @@
         const label = document.getElementById('auth-identity-label');
         const input = document.getElementById('auth-email');
         const signup = document.getElementById('auth-signup-toggle');
-        const nameGroup = document.getElementById('auth-name-group');
-        const nameInput = document.getElementById('auth-name');
         if (label) label.textContent = 'E-posta';
         if (input) {
             input.type = 'email';
@@ -83,8 +81,6 @@
             input.autocomplete = 'username';
         }
         if (signup) signup.hidden = false;
-        if (nameGroup) nameGroup.hidden = activeAuthMode !== 'signup';
-        if (nameInput) nameInput.required = activeAuthMode === 'signup';
         const copy = document.getElementById('auth-signup-copy');
         if (copy) copy.hidden = activeAuthMode !== 'signup';
     };
@@ -101,8 +97,6 @@
             input.autocomplete = 'username';
         }
         if (signup) signup.hidden = true;
-        if (nameGroup) nameGroup.hidden = true;
-        if (nameInput) nameInput.required = false;
         if (copy) copy.hidden = true;
     };
     window.toggleMemberSignup = () => {
@@ -288,26 +282,60 @@
             </section>
             <div class="member-portal-grid" style="margin-top:1rem">
                 <section class="member-portal-card member-portal-section" data-portal-section="measurements">
-                    <h2>📊 Son ölçüm</h2>
-                    <div class="member-portal-grid">
+                    <h2 style="margin-bottom:1rem; color:var(--accent);">📊 Vücut Ölçümleri & Analiz</h2>
+
+                    <div class="member-portal-grid" style="margin-bottom: 1.5rem; background:rgba(255,255,255,0.02); padding:1rem; border-radius:12px;">
                         ${metrics.map(([label, value, unit]) => `
                             <div><span class="member-portal-muted">${label}</span><h3>${escapePortalText(value)} ${unit}</h3></div>
                         `).join('')}
                     </div>
+
+                    <h3 style="margin-bottom:1rem; font-size:1rem; color:var(--primary);">🫀 Kardiyo ve Metabolizma (Son Test)</h3>
+                    ${(() => {
+                        const cardioData = sortedMeasurements.find(m => m.rhr || m.bmr || m.vo2max);
+                        if (!cardioData) return '<p class="member-portal-muted">Henüz kardiyo ve metabolizma test kaydı bulunmuyor.</p>';
+                        return `
+                        <div class="member-portal-grid" style="background:rgba(255,255,255,0.02); padding:1rem; border-radius:12px;">
+                            <div><span class="member-portal-muted">VO2 Max</span><h3>${cardioData.vo2max || '--'}</h3></div>
+                            <div><span class="member-portal-muted">Dinlenik Nabız</span><h3>${cardioData.rhr || '--'} bpm</h3></div>
+                            <div><span class="member-portal-muted">BMR (Bazal Met.)</span><h3>${cardioData.bmr || '--'} kcal</h3></div>
+                            <div><span class="member-portal-muted">Nabız Rezervi</span><h3>${cardioData.hrr || '--'} bpm</h3></div>
+                        </div>`;
+                    })()}
                 </section>
+
                 <section class="member-portal-card member-portal-section" data-portal-section="workouts">
-                    <h2>🏋️ Antrenman geçmişi</h2>
+                    <h2 style="margin-bottom:1rem; color:var(--accent);">🏋️ Antrenman geçmişi</h2>
                     ${sortedWorkouts.length ? `<ul class="member-portal-list">${sortedWorkouts.slice(0, 10).map(workout => `
-                        <li><strong>${escapePortalText(workout.sablon || 'Antrenman')}</strong><br>
-                        <span class="member-portal-muted">${escapePortalText(workout.tarih)}</span></li>
+                        <li style="background:rgba(255,255,255,0.02); padding:1rem; border-radius:8px; margin-bottom:0.5rem; border:1px solid rgba(255,255,255,0.05);">
+                            <strong>${escapePortalText(workout.sablon || 'Antrenman')}</strong><br>
+                            <span class="member-portal-muted">${escapePortalText(workout.tarih)}</span>
+                        </li>
                     `).join('')}</ul>` : '<p class="member-portal-muted">Henüz antrenman kaydı bulunmuyor.</p>'}
                 </section>
+
                 <section class="member-portal-card member-portal-section" data-portal-section="nutrition">
-                    <h2>🍏 Beslenme planları</h2>
-                    ${sortedDiets.length ? `<ul class="member-portal-list">${sortedDiets.map(diet => `
-                        <li><strong>${escapePortalText(diet.plan_adi || 'Beslenme planı')}</strong><br>
-                        <span class="member-portal-muted">${escapePortalText(diet.tarih)}</span></li>
-                    `).join('')}</ul>` : '<p class="member-portal-muted">Henüz beslenme planı bulunmuyor.</p>'}
+                    <h2 style="margin-bottom:1rem; color:var(--accent);">🍏 Beslenme planları</h2>
+                    ${sortedDiets.length ? `<ul class="member-portal-list">${sortedDiets.map(diet => {
+                        const meals = window.safeJSONParse(diet.ogunler, []);
+                        let tCal = 0, tPro = 0, tCarb = 0, tFat = 0;
+                        meals.forEach(m => {
+                            tCal += m.kalori || 0; tPro += m.protein || 0; tCarb += m.karbonhidrat || 0; tFat += m.yag || 0;
+                        });
+                        return `
+                        <li style="background:rgba(255,255,255,0.02); padding:1rem; border-radius:8px; margin-bottom:0.5rem; border:1px solid rgba(255,255,255,0.05);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                                <strong>${escapePortalText(diet.plan_adi || 'Beslenme planı')}</strong>
+                                <span class="member-portal-muted">${escapePortalText(diet.tarih)}</span>
+                            </div>
+                            <div style="display:flex; gap:0.5rem; font-size:0.75rem; color:var(--text-dim); flex-wrap:wrap;">
+                                <span style="background:rgba(255,165,0,0.1); color:orange; padding:0.2rem 0.5rem; border-radius:4px;">🔥 ${tCal.toFixed(0)} kcal</span>
+                                <span style="background:rgba(143,183,217,0.1); color:var(--primary); padding:0.2rem 0.5rem; border-radius:4px;">P: ${tPro.toFixed(0)}g</span>
+                                <span style="background:rgba(143,183,217,0.1); color:var(--primary); padding:0.2rem 0.5rem; border-radius:4px;">C: ${tCarb.toFixed(0)}g</span>
+                                <span style="background:rgba(143,183,217,0.1); color:var(--primary); padding:0.2rem 0.5rem; border-radius:4px;">Y: ${tFat.toFixed(0)}g</span>
+                            </div>
+                        </li>`;
+                    }).join('')}</ul>` : '<p class="member-portal-muted">Henüz beslenme planı bulunmuyor.</p>'}
                 </section>
                 <section class="member-portal-card member-portal-section" data-portal-section="documents">
                     <h2>📄 Belgeler</h2>
@@ -336,21 +364,53 @@
             const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
             if (sessionError || !sessionData.session) throw new Error('Oturum bulunamadı.');
             const userId = sessionData.session.user.id;
-            const [memberResult, measurementsResult, workoutsResult, dietsResult, documentsResult] = await Promise.all([
-                supabase.from('uyeler').select('*').eq('auth_user_id', userId).maybeSingle(),
-                supabase.from('olcumler').select('*'),
-                supabase.from('antrenmanlar').select('*'),
-                supabase.from('beslenme_planlari').select('*'),
-                supabase.from('dokumanlar').select('*')
+            // Önce sadece member'i çekip ID'sini bulmalıyız
+            const memberResult = await supabase.from('uyeler').select('*').eq('auth_user_id', userId).maybeSingle();
+            if (memberResult.error) throw memberResult.error;
+            const member = memberResult.data;
+            if (!member) throw new Error('Bu kullanıcı henüz aktif bir danışan profiline bağlanmamış. Lütfen antrenörünüzden sizi sisteme dahil etmesini isteyin.');
+
+            // Sonra o member'in ID'siyle güvenli bir şekilde filtreleyerek sadece ONUN verilerini çek
+            const [measurementsResult, workoutsResult, dietsResult, documentsResult] = await Promise.all([
+                supabase.from('olcumler').select('*').eq('member_id', member.id),
+                supabase.from('antrenmanlar').select('*').eq('member_id', member.id),
+                supabase.from('beslenme_planlari').select('*').eq('member_id', member.id),
+                supabase.from('dokumanlar').select('*').eq('member_id', member.id)
             ]);
-            const result = [memberResult, measurementsResult, workoutsResult, dietsResult, documentsResult]
+            const result = [measurementsResult, workoutsResult, dietsResult, documentsResult]
                 .find(item => item.error);
             if (result?.error) throw result.error;
-            const member = memberResult.data;
-            if (!member) throw new Error('Bu kullanıcı herhangi bir danışan profiline bağlanmamış.');
+
+            // Measurements'ları render etmeden önce hesaplanmış (sanal) alanlarını (BMR, VO2Max vb.) geri getir (Admin panelindeki sync mantığıyla aynı)
+            const mappedMeasurements = (measurementsResult.data || []).map(m => {
+                m.yas = m.l_leg;
+                m.rhr = m.r_leg;
+                m.cooper = m.hips;
+                if (m.yas) {
+                    m.mhr = Math.round(208 - (0.7 * m.yas));
+                    if (m.rhr) m.hrr = m.mhr - m.rhr;
+                }
+                if (m.cooper) {
+                    const gender = member.cinsiyet || 'Erkek';
+                    if (gender === 'Kadın') {
+                        m.vo2max = (65.81 - (0.1847 * m.cooper)).toFixed(1);
+                    } else {
+                        m.vo2max = (111.33 - (0.42 * m.cooper)).toFixed(1);
+                    }
+                }
+                if (m.weight && m.yas && member.boy) {
+                    const gender = member.cinsiyet || 'Erkek';
+                    let bmr = (gender === 'Kadın')
+                        ? (10 * m.weight) + (6.25 * member.boy) - (5 * m.yas) - 161
+                        : (10 * m.weight) + (6.25 * member.boy) - (5 * m.yas) + 5;
+                    m.bmr = Math.round(bmr);
+                }
+                return m;
+            });
+
             renderMemberPortal({
                 member,
-                measurements: measurementsResult.data || [],
+                measurements: mappedMeasurements,
                 workouts: workoutsResult.data || [],
                 diets: dietsResult.data || [],
                 documents: documentsResult.data || []
@@ -538,17 +598,47 @@
     window.revertTo = async (index) => {
         if (!confirm("Seçilen işleme kadar olan tüm değişiklikler geri alınacak. Emin misiniz?")) return;
         window.closeModal('modal-undo-log');
+
+        // Hızlıca UI'ı dondur veya loading göster
+        const fab = document.querySelector('.fab');
+        if(fab) fab.innerHTML = '⏳';
+
         try {
             const actions = state.undoStack.slice(0, index + 1);
+
             for (const action of actions) {
-                if (action.type === 'INSERT') await supabase.from(action.table).delete().eq('id', action.newData.id);
-                else if (action.type === 'DELETE') await supabase.from(action.table).insert(action.oldData);
-                else if (action.type === 'UPDATE') await supabase.from(action.table).upsert(action.oldData);
+                // INSERT edilen veriyi veritabanından SIL (Geri al)
+                if (action.type === 'INSERT') {
+                    if (action.newData && action.newData.id) {
+                        await supabase.from(action.table).delete().eq('id', action.newData.id);
+                    }
+                }
+                // DELETE edilen veriyi veritabanına TEKRAR EKLE (Geri al)
+                else if (action.type === 'DELETE') {
+                    if (action.oldData) {
+                        await supabase.from(action.table).insert(action.oldData);
+                    }
+                }
+                // UPDATE edilen veriyi ESKİ HALİNE UPSERT ET (Geri al)
+                else if (action.type === 'UPDATE') {
+                    if (action.oldData) {
+                        await supabase.from(action.table).upsert(action.oldData);
+                    }
+                }
             }
+
+            // İşlemler başarılı olduysa, undo logdan o ve önceki adımları temizle
             state.undoStack.splice(0, index + 1);
+
+            // Verileri Supabase'den tekrar çek (senkronize et) ve UI'ı güncelle
             await sync();
-            alert("İşlemler geri alındı!");
-        } catch (err) { handleError(err, "Revert"); }
+            alert("İşlemler başarıyla geri alındı!");
+        } catch (err) {
+            console.error("Geri Alma Hatası (RevertTo):", err);
+            alert("Geri alma işlemi sırasında bir hata oluştu! Konsolu kontrol edin.");
+        } finally {
+            if(fab) fab.innerHTML = '➕';
+        }
     };
 
     // --- NAVIGATION ---
@@ -647,6 +737,80 @@
     };
 
     // --- DASHBOARD & ANALYTICS ---
+
+
+    window.generateMemberReport = async () => {
+        if (!state.activeMemberId) return;
+
+        const member = state.members.find(m => m.id == state.activeMemberId);
+        if (!member) return;
+
+        // Fetch data
+        const myM = state.measurements.filter(m => m.member_id == state.activeMemberId).sort((a,b)=>new Date(b.tarih)-new Date(a.tarih));
+        const myW = state.workouts.filter(w => w.member_id == state.activeMemberId).sort((a,b)=>new Date(b.tarih)-new Date(a.tarih));
+        const myD = state.diets.filter(d => d.member_id == state.activeMemberId).sort((a,b)=>new Date(b.tarih)-new Date(a.tarih));
+
+        // Get actual physical measurements
+        const physicalM = myM.filter(m => m.weight);
+        const lastM = physicalM.length > 0 ? physicalM[0] : null;
+
+        // Get cardio tests
+        const cardioM = myM.filter(m => m.vo2max || m.rhr || m.bmr);
+        const lastC = cardioM.length > 0 ? cardioM[0] : null;
+
+        // Get latest diet
+        const lastDiet = myD.length > 0 ? myD[0] : null;
+
+        let report = `*${member.ad_soyad.toUpperCase()} - GELİŞİM RAPORU* 📊\n`;
+        report += `Tarih: ${new Date().toLocaleDateString('tr-TR')}\n`;
+        report += `Branş: ${member.brans}\n\n`;
+
+        if (lastM) {
+            report += `*📏 SON VÜCUT ÖLÇÜMLERİ (${new Date(lastM.tarih).toLocaleDateString('tr-TR')})*\n`;
+            if(lastM.weight) report += `• Kilo: ${lastM.weight} kg\n`;
+            if(lastM.fat) report += `• Yağ Oranı: %${lastM.fat}\n`;
+            if(lastM.waist) report += `• Bel: ${lastM.waist} cm\n`;
+            if(lastM.chest) report += `• Göğüs: ${lastM.chest} cm\n`;
+            report += `\n`;
+        }
+
+        if (lastC) {
+            report += `*🫀 KARDİYO & METABOLİZMA (${new Date(lastC.tarih).toLocaleDateString('tr-TR')})*\n`;
+            if(lastC.bmr) report += `• Bazal Metabolizma (BMR): ${lastC.bmr} kcal\n`;
+            if(lastC.vo2max) report += `• VO2 Max: ${lastC.vo2max}\n`;
+            if(lastC.rhr) report += `• Dinlenik Nabız (RHR): ${lastC.rhr} bpm\n`;
+            if(lastC.hrr) report += `• Nabız Rezervi (HRR): ${lastC.hrr} bpm\n`;
+            report += `\n`;
+        }
+
+        if (lastDiet) {
+            const meals = window.safeJSONParse(lastDiet.ogunler, []);
+            let tCal = 0, tPro = 0, tCarb = 0, tFat = 0;
+            meals.forEach(m => {
+                tCal += m.kalori || 0; tPro += m.protein || 0; tCarb += m.karbonhidrat || 0; tFat += m.yag || 0;
+            });
+            report += `*🍏 AKTİF BESLENME PLANI (${lastDiet.plan_adi})*\n`;
+            report += `• ${tCal.toFixed(0)} kcal\n`;
+            report += `• Protein: ${tPro.toFixed(0)}g | Karb: ${tCarb.toFixed(0)}g | Yağ: ${tFat.toFixed(0)}g\n`;
+            report += `\n`;
+        }
+
+        if (myW.length > 0) {
+            report += `*🏋️ ANTRENMAN ÖZETİ*\n`;
+            report += `• Toplam tamamlanan antrenman: ${myW.length}\n`;
+            report += `• Son antrenman tarihi: ${new Date(myW[0].tarih).toLocaleDateString('tr-TR')}\n`;
+        }
+
+        report += `\n_Zen Wellness Club tarafından Trainer Pro ile oluşturulmuştur._`;
+
+        try {
+            await navigator.clipboard.writeText(report);
+            alert("Rapor başarıyla panoya kopyalandı! (WhatsApp veya Mail'e yapıştırabilirsiniz)");
+        } catch (err) {
+            console.error("Panoya kopyalanamadı:", err);
+            prompt("Panoya otomatik kopyalama başarısız oldu. Aşağıdaki metni kopyalayabilirsiniz:", report);
+        }
+    };
 
     window.updateDashboardSummary = () => {
         if (!state.activeMemberId) return;
@@ -980,6 +1144,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div><div class="workout-meta">${new Date(d.tarih).toLocaleDateString('tr-TR')}</div><h3>${d.plan_adi}</h3></div>
                     <div class="card-actions">
+                        <button class="btn-edit" onclick="event.stopPropagation(); window.cloneDietPlan(${d.id})" title="Bu planı kopyala">⧉</button>
                         <button class="btn-delete" onclick="event.stopPropagation(); window.deleteDietPlan(${d.id})">🗑</button>
                     </div>
                 </div>
@@ -988,6 +1153,54 @@
                 </div>
             </div>
         `}).join('');
+    };
+
+
+    window.cloneDietPlan = (id) => {
+        const d = state.diets.find(x => x.id == id);
+        if (!d) return;
+
+        // Open modal
+        document.getElementById('d-name').value = `${d.plan_adi} (Kopya)`;
+        document.getElementById('meal-rows-container').innerHTML = '';
+
+        // Set to today's date
+        const today = new Date();
+        const dateString = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        document.getElementById('d-date').value = dateString;
+
+        // Parse meals and populate
+        const meals = window.safeJSONParse(d.ogunler, []);
+
+        // Group meals by meal_name (since the new structure uses nested meals)
+        const groupedMeals = {};
+        meals.forEach(m => {
+            const mName = m.meal_name || "Öğün";
+            if (!groupedMeals[mName]) groupedMeals[mName] = [];
+            groupedMeals[mName].push(m);
+        });
+
+        // Reconstruct the nested UI
+        for (const [mName, foods] of Object.entries(groupedMeals)) {
+            window.addMealRowToDiet(mName); // Create the meal block
+
+            // The addMealRowToDiet function adds it to the end of the container.
+            // Find that newly created container:
+            const mealWrappers = document.querySelectorAll('.meal-row-wrapper');
+            const newMealWrapper = mealWrappers[mealWrappers.length - 1];
+            const foodsContainer = newMealWrapper.querySelector('.foods-container');
+
+            // Clear the default empty row it creates
+            foodsContainer.innerHTML = '';
+
+            // Add all foods for this meal
+            foods.forEach(f => {
+                window.addSingleFoodRow(foodsContainer, f);
+            });
+        }
+
+        window.updateDietTotals();
+        window.openModal('modal-diet');
     };
 
     window.openDietModal = () => {
@@ -2260,8 +2473,47 @@ window.editMeasurement = (id) => {
 
         // 3. Şablon detaylarını (JSON) parse et ve her bir hareket için yeni satır oluştur
         const details = window.safeJSONParse(p.detaylar, []);
+
+        // Üyenin geçmiş antrenmanlarını performans tahmini için al
+        const myW = state.workouts.filter(w => w.member_id == state.activeMemberId).sort((a,b)=>new Date(b.tarih)-new Date(a.tarih));
+
         details.forEach(d => {
+            // Egzersizi ekle
             window.addSetRowToWorkout(d.ad);
+
+            // Eğer geçmişte bu hareketi yapmışsa, placeholder eklemek için DOM elementlerini bul
+            let lastWeight = '';
+            let lastReps = '';
+
+            for (let w of myW) {
+                const sets = window.safeJSONParse(w.setler, []);
+                const match = sets.find(s => s.ad === d.ad);
+                if (match) {
+                    lastWeight = match.weight;
+                    lastReps = match.reps;
+                    break;
+                }
+            }
+
+            if (lastWeight || lastReps) {
+                // DOM'a yeni eklenen en son wrapper'ı bul
+                const containers = document.querySelectorAll('.set-row-wrapper');
+                const lastContainer = containers[containers.length - 1];
+                if (lastContainer) {
+                    const weightInput = lastContainer.querySelector('.s-weight');
+                    const repsInput = lastContainer.querySelector('.s-reps');
+                    if (weightInput) weightInput.placeholder = lastWeight ? `Son: ${lastWeight}` : '';
+                    if (repsInput) repsInput.placeholder = lastReps ? `Son: ${lastReps}` : '';
+
+                    // Küçük bir ipucu metni de ekleyelim
+                    const hint = document.createElement('div');
+                    hint.style.fontSize = '0.7rem';
+                    hint.style.color = 'var(--accent)';
+                    hint.style.marginTop = '0.3rem';
+                    hint.innerText = `💡 Son Performans: ${lastWeight}kg x ${lastReps}`;
+                    lastContainer.appendChild(hint);
+                }
+            }
         });
     };
 
@@ -2641,6 +2893,48 @@ window.editMeasurement = (id) => {
         return { data: allData, error: null };
     }
 
+
+    // --- OFFLINE & LOCAL STORAGE CACHING ---
+    function saveToLocal() {
+        try {
+            const stateToSave = {
+                members: state.members,
+                programs: state.programs,
+                measurements: state.measurements,
+                workouts: state.workouts,
+                documents: state.documents,
+                exercises: state.exercises,
+                foods: state.foods,
+                diets: state.diets,
+                lastSync: new Date().getTime()
+            };
+            localStorage.setItem('trainerpro_cache', JSON.stringify(stateToSave));
+        } catch (e) {
+            console.warn("Yerel depolama hatası (Kota aşımı vb.):", e);
+        }
+    }
+
+    function loadFromLocal() {
+        try {
+            const cached = localStorage.getItem('trainerpro_cache');
+            if (cached) {
+                const data = JSON.parse(cached);
+                state.members = data.members || [];
+                state.programs = data.programs || [];
+                state.measurements = data.measurements || [];
+                state.workouts = data.workouts || [];
+                state.documents = data.documents || [];
+                state.exercises = data.exercises || [];
+                state.foods = data.foods || [];
+                state.diets = data.diets || [];
+                return true;
+            }
+        } catch (e) {
+            console.warn("Yerel depolama okuma hatası:", e);
+        }
+        return false;
+    }
+
     async function sync() {
         const { data: sessionData } = await withAuthTimeout(
             supabase.auth.getSession(),
@@ -2651,9 +2945,16 @@ window.editMeasurement = (id) => {
             return false;
         }
         if (!navigator.onLine) {
-            setSyncStatus('offline', 'Çevrimdışı · Son veriler gösteriliyor');
+            const hasLocal = loadFromLocal();
+            if(hasLocal) refreshAll();
+            setSyncStatus('offline', 'Çevrimdışı (Son Önbellek Kullanılıyor)');
             return false;
         }
+
+        // Önce hızlıca ekranı doldur (Optimistic UI)
+        loadFromLocal();
+        refreshAll();
+
         setSyncStatus('syncing', 'Senkronize ediliyor...');
         try {
 
