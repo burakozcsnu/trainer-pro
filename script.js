@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.90';
+    const APP_VERSION = '1.3.91';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -1860,23 +1860,46 @@
         return `${String(Math.floor(totalMinutes / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`;
     });
 
-    function renderScheduleChoices(selectedDays = [], selectedTimes = []) {
-        const dayGrid = document.getElementById('schedule-days-grid');
-        const timeGrid = document.getElementById('schedule-times-grid');
-        if (!dayGrid || !timeGrid) return;
-        const selectedDaySet = new Set(selectedDays.map(Number));
-        const selectedTimeSet = new Set(selectedTimes);
-        dayGrid.innerHTML = scheduleDays.map(([value, label]) => `
-            <label class="schedule-choice">
-                <input type="checkbox" name="schedule-days" value="${value}" ${selectedDaySet.has(value) ? 'checked' : ''}>
-                <span>${label}</span>
-            </label>`).join('');
-        timeGrid.innerHTML = scheduleTimes.map(time => `
-            <label class="schedule-choice schedule-time-choice">
-                <input type="checkbox" name="schedule-times" value="${time}" ${selectedTimeSet.has(time) ? 'checked' : ''}>
-                <span>${time}</span>
-            </label>`).join('');
+    const scheduleBranches = ['Fitness', 'Karate', 'Basketbol', 'Yoga', 'Fonksiyonel Egzersiz'];
+    const scheduleTimeOptions = (selected = '') => `<option value="">Seçin</option>${scheduleTimes.map(time =>
+        `<option value="${time}" ${time === selected ? 'selected' : ''}>${time}</option>`).join('')}`;
+    const scheduleDayOptions = (selected = 1) => scheduleDays.map(([value, label]) =>
+        `<option value="${value}" ${Number(selected) === value ? 'selected' : ''}>${label}</option>`).join('');
+    const scheduleBranchOptions = (selected = 'Fitness') => scheduleBranches.map(branch =>
+        `<option value="${branch}" ${branch === selected ? 'selected' : ''}>${branch}</option>`).join('');
+
+    function renderScheduleRows(rows = [{}]) {
+        const container = document.getElementById('schedule-rows');
+        if (!container) return;
+        container.innerHTML = rows.map((row, index) => `
+            <div class="schedule-row" data-schedule-row>
+                <select data-schedule-day aria-label="Seans günü" required>${scheduleDayOptions(row.day_of_week || index + 1)}</select>
+                <select data-schedule-start aria-label="Başlangıç saati" required>${scheduleTimeOptions(row.start_time?.slice(0, 5))}</select>
+                <select data-schedule-end aria-label="Bitiş saati" required>${scheduleTimeOptions(row.end_time?.slice(0, 5))}</select>
+                <select data-schedule-branch aria-label="Branş" required>${scheduleBranchOptions(row.branch)}</select>
+                <button class="btn-delete schedule-remove-row" type="button" aria-label="Seansı kaldır"
+                    onclick="this.closest('[data-schedule-row]').remove()">×</button>
+            </div>`).join('');
+        container.querySelectorAll('[data-schedule-row]').forEach(row => {
+            row.querySelector('[data-schedule-start]').addEventListener('change', event => {
+                const end = row.querySelector('[data-schedule-end]');
+                if (!end.value || end.value <= event.target.value) {
+                    end.value = scheduleTimes[Math.min(scheduleTimes.indexOf(event.target.value) + 1, scheduleTimes.length - 1)];
+                }
+            });
+        });
     }
+
+    window.addScheduleRow = () => {
+        const rows = [...document.querySelectorAll('[data-schedule-row]')].map(row => ({
+            day_of_week: row.querySelector('[data-schedule-day]').value,
+            start_time: row.querySelector('[data-schedule-start]').value,
+            end_time: row.querySelector('[data-schedule-end]').value,
+            branch: row.querySelector('[data-schedule-branch]').value
+        }));
+        rows.push({});
+        renderScheduleRows(rows);
+    };
 
     function renderWeeklySchedule() {
         const container = document.getElementById('weekly-schedule-grid');
@@ -1918,9 +1941,7 @@
         document.getElementById('schedule-modal-title').textContent = entry ? 'Seansı düzenle' : 'Haftalık programa ekle';
         document.getElementById('schedule-id').value = entry?.id || '';
         populateScheduleMembers(entry?.member_id || '');
-        renderScheduleChoices(entry ? [entry.day_of_week] : [], entry ? [entry.start_time.slice(0, 5)] : []);
-        document.getElementById('schedule-end').value = entry?.end_time?.slice(0, 5) || '';
-        document.getElementById('schedule-branch').value = entry?.branch || 'Fitness';
+        renderScheduleRows(entry ? [entry] : [{}]);
         document.getElementById('schedule-notes').value = entry?.notes || '';
         document.getElementById('schedule-delete').hidden = !entry;
         window.openModal('modal-schedule');
@@ -1930,32 +1951,34 @@
         event.preventDefault();
         const id = document.getElementById('schedule-id').value;
         const memberId = document.getElementById('schedule-member').value;
-        const branch = document.getElementById('schedule-branch').value;
-        const selectedDays = [...document.querySelectorAll('input[name="schedule-days"]:checked')].map(input => Number(input.value));
-        const selectedTimes = [...document.querySelectorAll('input[name="schedule-times"]:checked')].map(input => input.value);
-        if (!selectedDays.length || !selectedTimes.length) {
-            alert('Lütfen en az bir gün ve bir saat seçin.');
+        const rows = [...document.querySelectorAll('[data-schedule-row]')].map(row => ({
+            day_of_week: Number(row.querySelector('[data-schedule-day]').value),
+            start_time: row.querySelector('[data-schedule-start]').value,
+            end_time: row.querySelector('[data-schedule-end]').value,
+            branch: row.querySelector('[data-schedule-branch]').value
+        }));
+        if (!rows.length || rows.some(row => !row.start_time || !row.end_time)) {
+            alert('Lütfen her seans için gün, başlangıç ve bitiş saati seçin.');
             return;
         }
-        if (id && (selectedDays.length !== 1 || selectedTimes.length !== 1)) {
-            alert('Mevcut seansı düzenlerken yalnızca bir gün ve bir saat seçebilirsiniz.');
+        if (rows.some(row => row.end_time <= row.start_time)) {
+            alert('Bitiş saati başlangıç saatinden sonra olmalıdır.');
+            return;
+        }
+        const keys = rows.map(row => `${row.day_of_week}-${row.start_time}`);
+        if (new Set(keys).size !== keys.length) {
+            alert('Aynı gün ve başlangıç saati yalnızca bir kez eklenebilir.');
             return;
         }
         const baseData = {
             member_id: memberId,
-            end_time: document.getElementById('schedule-end').value || null,
-            branch,
             notes: document.getElementById('schedule-notes').value.trim(),
             updated_at: new Date().toISOString()
         };
-        const entries = id
-            ? [{ ...baseData, id, day_of_week: selectedDays[0], start_time: selectedTimes[0] }]
-            : selectedDays.flatMap(day => selectedTimes.map((time, index) => ({
-                ...baseData,
-                id: Date.now() + (day * 100) + index,
-                day_of_week: day,
-                start_time: time
-            })));
+        const entries = rows.map((row, index) => ({
+            ...baseData, ...row,
+            id: id && index === 0 ? id : Date.now() + index
+        }));
         const { error } = await supabase.from('weekly_program_schedule')
             .upsert(entries, { onConflict: 'member_id,day_of_week,start_time' });
         if (error) {
@@ -1964,8 +1987,9 @@
             return;
         }
         const member = state.members.find(item => item.id == memberId);
-        if (member && member.brans !== branch) {
-            const { error: memberError } = await supabase.from('uyeler').update({ brans: branch }).eq('id', memberId);
+        const primaryBranch = rows[0].branch;
+        if (member && member.brans !== primaryBranch) {
+            const { error: memberError } = await supabase.from('uyeler').update({ brans: primaryBranch }).eq('id', memberId);
             if (memberError) {
                 handleError(memberError, 'Schedule member branch update');
                 alert(`Seans kaydedildi ancak üye branşı güncellenemedi: ${memberError.message}`);
