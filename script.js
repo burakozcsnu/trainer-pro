@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.97';
+    const APP_VERSION = '1.3.98';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -2149,11 +2149,15 @@
         return (hours * 60) + minutes;
     };
 
+    const scheduleEndMinutes = schedule => schedule.end_time
+        ? timeToMinutes(schedule.end_time)
+        : timeToMinutes(schedule.start_time) + 30;
+
     const schedulesOverlap = (left, right) => (
         Number(left.member_id) === Number(right.member_id) &&
         Number(left.day_of_week) === Number(right.day_of_week) &&
-        timeToMinutes(left.start_time) < timeToMinutes(right.end_time || '23:59') &&
-        timeToMinutes(right.start_time) < timeToMinutes(left.end_time || '23:59')
+        timeToMinutes(left.start_time) < scheduleEndMinutes(right) &&
+        timeToMinutes(right.start_time) < scheduleEndMinutes(left)
     );
 
     function getScheduleConflictIds(entries) {
@@ -2236,7 +2240,9 @@
         }
         const conflict = findScheduleConflict(rows, id);
         if (conflict) {
-            alert(`Bu üyenin ${getScheduleDayName(conflict.day_of_week)} günü ${conflict.start_time.slice(0, 5)} - ${conflict.end_time?.slice(0, 5) || '23:59'} arasında başka bir seansı var. Çakışan seansları düzeltmeden kaydedemezsiniz.`);
+            const conflictEnd = conflict.end_time?.slice(0, 5) ||
+                `${String(Math.floor(scheduleEndMinutes(conflict) / 60)).padStart(2, '0')}:${String(scheduleEndMinutes(conflict) % 60).padStart(2, '0')}`;
+            alert(`Bu üyenin ${getScheduleDayName(conflict.day_of_week)} günü ${conflict.start_time.slice(0, 5)} - ${conflictEnd} arasında${conflict.branch ? ` ${conflict.branch}` : ''} seansı var. Çakışan seansları düzeltmeden kaydedemezsiniz.`);
             return;
         }
         const baseData = {
