@@ -16,6 +16,43 @@ const client = new Client({
   }
 });
 
+const extendedExerciseCatalog = require('./exercise_catalog_extended.json');
+
+function deriveExerciseTaxonomy({ name, branch, bodyPart, muscles }) {
+  const text = `${name} ${muscles.join(' ')}`.toLowerCase();
+  const classification = [];
+  if (bodyPart === 'Alt Ekstremite') classification.push('Alt Ekstremite');
+  else if (bodyPart === 'Üst Ekstremite') classification.push('Üst Ekstremite');
+  else if (/squat|lunge|jump|kick|glute|quad|hamstring|calf|hip|leg|dachi|geri|barai/.test(text)) classification.push('Alt Ekstremite');
+  if (bodyPart === 'Üst Ekstremite' || /push|pull|press|row|punch|strike|shoulder|chest|back|arm|uchi|zuki|uke/.test(text)) {
+    classification.push('Üst Ekstremite');
+  }
+  if (classification.length === 0) classification.push('Bölgesel');
+  if (/chest|quad|shoulder|press|push|front|zuki|uke|kick|core|abdomen|psoas/.test(text)) {
+    classification.push('Anterior Chain');
+  }
+  if (/back|lat|hamstring|glute|calf|posterior|row|pull|deadlift|hinge|spine|dachi/.test(text)) {
+    classification.push('Posterior Chain');
+  }
+  if (
+    ['Fitness', 'Fonksiyonel', 'Calisthenics', 'Plyometrics', 'Karate', 'Kickboks'].includes(branch) ||
+    /squat|lunge|deadlift|press|row|carry|crawl|jump|swing|snatch|clean|combination|flow|dachi|kumite/.test(text)
+  ) {
+    classification.push('Compound');
+  } else {
+    classification.push('Bölgesel');
+  }
+  if (['Mobility', 'Corrective', 'Yoga'].includes(branch) || /stretch|mobility|release|rotation|switch|flow|balance/.test(text)) {
+    classification.push('Fasyal');
+  }
+  const result = { classification: [...new Set(classification)] };
+  if (branch === 'Yoga') result.styles = ['Hatha'];
+  if (branch === 'Karate') {
+    result.drill = /kumite|timing|angle|shuffle/.test(text) ? 'Kumite' : /heian|tekki|bunkai/.test(text) ? 'Kata' : 'Kihon';
+  }
+  return result;
+}
+
 const exerciseCatalog = [
   ['Air Squat', 'Fonksiyonel', 'Alt Ekstremite', ['Quad', 'Glute'], 'Vücut ağırlığı', 'Başlangıç'],
   ['Reverse Lunge', 'Fonksiyonel', 'Alt Ekstremite', ['Quad', 'Glute'], 'Vücut ağırlığı', 'Başlangıç'],
@@ -60,8 +97,26 @@ const exerciseCatalog = [
   ['Bear Crawl', 'Calisthenics', 'Tüm Vücut', ['Omuz', 'Core'], 'Vücut ağırlığı', 'Orta']
 ];
 
+function validateExtendedCatalog() {
+  const counts = extendedExerciseCatalog.reduce((result, exercise) => {
+    result[exercise.branch] = (result[exercise.branch] || 0) + 1;
+    return result;
+  }, {});
+  const names = extendedExerciseCatalog.map(exercise => exercise.name);
+  const expectedBranches = ['Fitness', 'Fonksiyonel', 'Calisthenics', 'Plyometrics', 'Mobility', 'Corrective', 'Karate', 'Kickboks', 'Yoga'];
+  if (
+    extendedExerciseCatalog.length !== 450 ||
+    expectedBranches.some(branch => counts[branch] !== 50) ||
+    new Set(names).size !== names.length ||
+    extendedExerciseCatalog.some(exercise => !exercise.classification?.length)
+  ) {
+    throw new Error('Extended exercise catalog must contain 50 unique classified exercises per branch.');
+  }
+}
+
 async function migrate() {
   try {
+    validateExtendedCatalog();
     await client.connect();
     console.log('Connected to Supabase successfully.');
 
@@ -208,7 +263,40 @@ async function migrate() {
         910000000000 + index,
         name,
         branch,
-        JSON.stringify({ bodyPart, muscles, branch, equipment, level, source: 'Zen Wellness Club core library' })
+        JSON.stringify({
+          bodyPart,
+          muscles,
+          branch,
+          equipment,
+          level,
+          source: 'Zen Wellness Club core library',
+          ...deriveExerciseTaxonomy({ name, branch, bodyPart, muscles })
+        })
+      ]);
+    }
+    for (const [index, exercise] of extendedExerciseCatalog.entries()) {
+      await client.query(`
+        INSERT INTO master_egzersizler (id, ad, brans, gruplar)
+        VALUES ($1, $2, $3, $4::jsonb)
+        ON CONFLICT (ad) DO UPDATE SET brans = EXCLUDED.brans, gruplar = EXCLUDED.gruplar
+      `, [
+        920000000000 + index,
+        exercise.name,
+        exercise.branch,
+        JSON.stringify({
+          bodyPart: exercise.bodyPart,
+          muscles: exercise.muscles,
+          branch: exercise.branch,
+          equipment: exercise.equipment,
+          level: exercise.level,
+          classification: exercise.classification,
+          styles: exercise.styles,
+          drill: exercise.drill,
+          sanskritName: exercise.sanskritName,
+          japaneseName: exercise.japaneseName,
+          source: exercise.source,
+          sourceUrl: exercise.sourceUrl
+        })
       ]);
     }
     console.log('Migration successful.');

@@ -422,6 +422,16 @@
                         <option value="Alt Ekstremite">Alt Ekstremite</option>
                         <option value="Tüm Vücut">Tüm Vücut</option>
                     </select>
+                    <select id="filter-ex-classification" onchange="window.renderExercises()" class="ex-select">
+                        <option value="">Tüm Sınıflandırmalar</option>
+                        <option value="Alt Ekstremite">Alt Ekstremite</option>
+                        <option value="Üst Ekstremite">Üst Ekstremite</option>
+                        <option value="Anterior Chain">Anterior Chain</option>
+                        <option value="Posterior Chain">Posterior Chain</option>
+                        <option value="Bölgesel">Bölgesel</option>
+                        <option value="Compound">Compound</option>
+                        <option value="Fasyal">Fasyal</option>
+                    </select>
                     <select id="filter-ex-muscle" onchange="window.renderExercises()" class="ex-select">
                         <option value="">Tüm Kas Grupları</option>
                         <option value="Göğüs">Göğüs</option>
@@ -449,6 +459,22 @@
                         <option value="Basketbol">Basketbol</option>
                         <option value="Yoga">Yoga</option>
                     </select>
+                    <select id="filter-ex-yoga-style" onchange="window.renderExercises()" class="ex-select">
+                        <option value="">Tüm Yoga Stilleri</option>
+                        <option value="Hatha">Hatha</option>
+                        <option value="Ashtanga">Ashtanga</option>
+                        <option value="Vinyasa">Vinyasa</option>
+                        <option value="Yin">Yin</option>
+                        <option value="Iyengar">Iyengar</option>
+                        <option value="Restorative">Restorative</option>
+                        <option value="Kundalini">Kundalini</option>
+                    </select>
+                    <select id="filter-ex-karate-drill" onchange="window.renderExercises()" class="ex-select">
+                        <option value="">Tüm Karate Drilleri</option>
+                        <option value="Kihon">Kihon</option>
+                        <option value="Kata">Kata</option>
+                        <option value="Kumite">Kumite</option>
+                    </select>
                     <select id="filter-ex-equipment" onchange="window.renderExercises()" class="ex-select">
                         <option value="">Tüm Ekipmanlar</option>
                         <option value="Vücut ağırlığı">Vücut ağırlığı</option>
@@ -461,6 +487,10 @@
                         <option value="Jump box">Jump box</option>
                         <option value="Punching bag">Punching bag</option>
                         <option value="Mitts and strike pads">Mitts and strike pads</option>
+                        <option value="Yoga matı">Yoga matı</option>
+                        <option value="Cones">Cones</option>
+                        <option value="Weighted vest">Weighted vest</option>
+                        <option value="Parallettes">Parallettes</option>
                     </select>
                 </div>
                 <div id="exercises-grid"></div>
@@ -891,7 +921,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.3.105"></script>
+    <script src="script.js?v=1.3.106"></script>
 </body>
 
 </html>

@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.105';
+    const APP_VERSION = '1.3.106';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -2571,8 +2571,11 @@
         if (!container) return;
 
         const filterBodyPart = document.getElementById('filter-ex-bodypart')?.value || '';
+        const filterClassification = document.getElementById('filter-ex-classification')?.value || '';
         const filterMuscle = document.getElementById('filter-ex-muscle')?.value || '';
         const filterBranch = document.getElementById('filter-ex-branch')?.value || '';
+        const filterYogaStyle = document.getElementById('filter-ex-yoga-style')?.value || '';
+        const filterKarateDrill = document.getElementById('filter-ex-karate-drill')?.value || '';
         const filterEquipment = document.getElementById('filter-ex-equipment')?.value || '';
 
         const groups = { 'Üst Ekstremite': [], 'Alt Ekstremite': [], 'Branşa Özel': [], 'Genel': [] };
@@ -2580,13 +2583,19 @@
         state.exercises.forEach(ex => {
             const g = window.safeJSONParse(ex.gruplar, {});
             const exBodyPart = g.bodyPart || '';
+            const exClassification = g.classification || [];
             const exMuscles = g.muscles || [];
             const exBranch = g.branch || ex.brans || 'Fitness';
+            const exStyles = g.styles || [];
+            const exDrill = g.drill || '';
             const exEquipment = g.equipment || '';
 
             if (filterBodyPart && exBodyPart !== filterBodyPart) return;
+            if (filterClassification && !exClassification.includes(filterClassification)) return;
             if (filterMuscle && !exMuscles.includes(filterMuscle)) return;
             if (filterBranch && exBranch !== filterBranch) return;
+            if (filterYogaStyle && !exStyles.includes(filterYogaStyle)) return;
+            if (filterKarateDrill && exDrill !== filterKarateDrill) return;
             if (filterEquipment && !exEquipment.split(',').map(item => item.trim()).includes(filterEquipment)) return;
 
             if (exBodyPart === 'Üst Ekstremite') groups['Üst Ekstremite'].push(ex);
@@ -2595,7 +2604,8 @@
             else groups['Genel'].push(ex);
         });
 
-        const isFiltered = filterBodyPart || filterMuscle || filterBranch;
+        const isFiltered = filterBodyPart || filterClassification || filterMuscle || filterBranch ||
+            filterYogaStyle || filterKarateDrill || filterEquipment;
 
         container.innerHTML = Object.entries(groups).map(([name, list]) => {
             if (list.length === 0) return '';
@@ -2614,11 +2624,16 @@
                             let tagsHtml = '';
                             const g = window.safeJSONParse(ex.gruplar, {});
                             if (g.bodyPart) tagsHtml += `<span class="tag">${g.bodyPart}</span>`;
+                            if (g.classification) g.classification.forEach(c => tagsHtml += `<span class="tag">${c}</span>`);
                             if (g.muscles) g.muscles.forEach(m => tagsHtml += `<span class="tag secondary">${m}</span>`);
                             if (g.branch) tagsHtml += `<span class="tag accent">${g.branch}</span>`;
                             else if (ex.brans) tagsHtml += `<span class="tag accent">${ex.brans}</span>`;
+                            if (g.styles) g.styles.forEach(style => tagsHtml += `<span class="tag secondary">Stil: ${style}</span>`);
+                            if (g.drill) tagsHtml += `<span class="tag secondary">Drill: ${g.drill}</span>`;
                             if (g.equipment) tagsHtml += `<span class="tag">${g.equipment}</span>`;
                             if (g.level) tagsHtml += `<span class="tag secondary">${g.level}</span>`;
+                            if (g.sanskritName) tagsHtml += `<span class="tag secondary">Sanskrit: ${g.sanskritName}</span>`;
+                            if (g.japaneseName) tagsHtml += `<span class="tag secondary">日本語: ${g.japaneseName}</span>`;
 
                             return `
                             <div class="card">
