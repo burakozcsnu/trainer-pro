@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.93';
+    const APP_VERSION = '1.3.94';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -344,6 +344,8 @@
     async function updateMemberNotificationStatus() {
         const status = document.getElementById('member-notification-status');
         if (!status) return;
+        const actions = status.closest('.member-portal-notification')?.querySelector('.member-notification-actions');
+        const enableButton = actions?.querySelector('button');
         if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
             status.textContent = 'Bu iPhone/PWA kurulumu gerçek push bildirimlerini desteklemiyor.';
             return;
@@ -356,11 +358,20 @@
             status.textContent = 'Bildirimleri etkinleştir düğmesine basarak izin verin.';
             return;
         }
-        const registration = await navigator.serviceWorker.getRegistration('./');
-        const subscription = await registration?.pushManager.getSubscription();
-        status.textContent = subscription
-            ? 'Push bildirimleri aktif: 1 gün ve 1 saat önce hatırlatılacaksınız.'
-            : 'İzin verildi ancak cihaz aboneliği bulunamadı. Bildirimleri tekrar etkinleştirin.';
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            if (subscription) {
+                status.textContent = 'Push bildirimleri aktif: 1 gün ve 1 saat önce hatırlatılacaksınız.';
+                if (enableButton) enableButton.hidden = true;
+            } else {
+                status.textContent = 'İzin verildi ancak cihaz aboneliği bulunamadı. Bildirimleri tekrar etkinleştirin.';
+                if (enableButton) enableButton.hidden = false;
+            }
+        } catch (error) {
+            handleError(error, 'Member push status');
+            status.textContent = 'Push aboneliği doğrulanamadı. Bildirimleri tekrar etkinleştirin.';
+        }
     }
 
     async function startMemberNotifications(member, schedules) {
