@@ -1657,6 +1657,14 @@ body,
     border-color: var(--primary);
     outline: none;
 }
+.weekly-schedule-entry.is-conflict {
+    border-color: var(--danger);
+    background: rgba(235, 87, 87, 0.12);
+}
+.weekly-schedule-entry.is-conflict small {
+    color: var(--danger);
+    font-weight: 700;
+}
 .weekly-schedule-entry span,
 .weekly-schedule-entry small {
     overflow-wrap: anywhere;

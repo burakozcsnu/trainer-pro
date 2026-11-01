@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.96';
+    const APP_VERSION = '1.3.97';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -2124,6 +2124,7 @@
         const container = document.getElementById('weekly-schedule-grid');
         if (!container) return;
         const entries = state.schedules || [];
+        const conflictIds = getScheduleConflictIds(entries);
         container.innerHTML = scheduleDays.map(([day, label]) => {
             const dayEntries = entries.filter(item => Number(item.day_of_week) === day)
                 .sort((a, b) => a.start_time.localeCompare(b.start_time));
@@ -2131,15 +2132,58 @@
                 <h3>${label}</h3>
                 ${dayEntries.length ? dayEntries.map(item => {
                     const member = state.members.find(candidate => candidate.id == item.member_id);
-                    return `<button class="weekly-schedule-entry" type="button"
+                    const hasConflict = conflictIds.has(String(item.id));
+                    return `<button class="weekly-schedule-entry${hasConflict ? ' is-conflict' : ''}" type="button"
                         onclick="window.openScheduleEditor(${item.id})">
                         <strong>${escapePortalText(item.start_time.slice(0, 5))}${item.end_time ? ` - ${escapePortalText(item.end_time.slice(0, 5))}` : ''}</strong>
                         <span>${escapePortalText(member?.ad_soyad || 'Üye bulunamadı')}</span>
-                        <small>${escapePortalText(item.branch)}</small>
+                        <small>${escapePortalText(item.branch)}${hasConflict ? ' · ÇAKIŞMA' : ''}</small>
                     </button>`;
                 }).join('') : '<p class="weekly-schedule-empty">Boş</p>'}
             </section>`;
         }).join('');
+    }
+
+    const timeToMinutes = value => {
+        const [hours, minutes] = String(value || '').slice(0, 5).split(':').map(Number);
+        return (hours * 60) + minutes;
+    };
+
+    const schedulesOverlap = (left, right) => (
+        Number(left.member_id) === Number(right.member_id) &&
+        Number(left.day_of_week) === Number(right.day_of_week) &&
+        timeToMinutes(left.start_time) < timeToMinutes(right.end_time || '23:59') &&
+        timeToMinutes(right.start_time) < timeToMinutes(left.end_time || '23:59')
+    );
+
+    function getScheduleConflictIds(entries) {
+        const conflictIds = new Set();
+        entries.forEach((entry, index) => {
+            entries.slice(index + 1).forEach(other => {
+                if (schedulesOverlap(entry, other)) {
+                    conflictIds.add(String(entry.id));
+                    conflictIds.add(String(other.id));
+                }
+            });
+        });
+        return conflictIds;
+    }
+
+    function findScheduleConflict(candidateRows, excludedId = '') {
+        const existing = (state.schedules || []).filter(item => String(item.id) !== String(excludedId));
+        for (const row of candidateRows) {
+            const candidate = { ...row, member_id: row.member_id };
+            const conflict = existing.find(item => schedulesOverlap(candidate, item));
+            if (conflict) return conflict;
+        }
+        for (let index = 0; index < candidateRows.length; index += 1) {
+            for (let otherIndex = index + 1; otherIndex < candidateRows.length; otherIndex += 1) {
+                if (schedulesOverlap(candidateRows[index], candidateRows[otherIndex])) {
+                    return candidateRows[otherIndex];
+                }
+            }
+        }
+        return null;
     }
 
     function populateScheduleMembers(selectedId = '') {
@@ -2171,6 +2215,7 @@
         const id = document.getElementById('schedule-id').value;
         const memberId = document.getElementById('schedule-member').value;
         const rows = [...document.querySelectorAll('[data-schedule-row]')].map(row => ({
+            member_id: Number(memberId),
             day_of_week: Number(row.querySelector('[data-schedule-day]').value),
             start_time: row.querySelector('[data-schedule-start]').value,
             end_time: row.querySelector('[data-schedule-end]').value,
@@ -2187,6 +2232,11 @@
         const keys = rows.map(row => `${row.day_of_week}-${row.start_time}`);
         if (new Set(keys).size !== keys.length) {
             alert('Aynı gün ve başlangıç saati yalnızca bir kez eklenebilir.');
+            return;
+        }
+        const conflict = findScheduleConflict(rows, id);
+        if (conflict) {
+            alert(`Bu üyenin ${getScheduleDayName(conflict.day_of_week)} günü ${conflict.start_time.slice(0, 5)} - ${conflict.end_time?.slice(0, 5) || '23:59'} arasında başka bir seansı var. Çakışan seansları düzeltmeden kaydedemezsiniz.`);
             return;
         }
         const baseData = {
