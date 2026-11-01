@@ -1,7 +1,7 @@
 import webpush from 'npm:web-push@3.6.7';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const serviceRoleKey = Deno.env.get('SUPABASE_SECRET_KEY')
+const serviceRoleKey = Deno.env.get('DATABASE_SECRET_KEY')
     || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const vapidSubject = Deno.env.get('VAPID_SUBJECT') || 'mailto:admin@zenwellnessclub.com';
 const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
@@ -10,7 +10,7 @@ const timezone = Deno.env.get('SCHEDULE_TIMEZONE') || 'Europe/Istanbul';
 const cronSecret = Deno.env.get('CRON_SECRET');
 
 if (!supabaseUrl || !serviceRoleKey || !vapidPublicKey || !vapidPrivateKey || !cronSecret) {
-    throw new Error('SUPABASE_URL, SUPABASE_SECRET_KEY, VAPID_* and CRON_SECRET are required.');
+    throw new Error('SUPABASE_URL, DATABASE_SECRET_KEY, VAPID_* and CRON_SECRET are required.');
 }
 
 webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
