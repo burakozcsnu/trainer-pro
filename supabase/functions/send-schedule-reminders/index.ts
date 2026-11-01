@@ -70,6 +70,9 @@ Deno.serve(async request => {
     const schedules = await fetchJson('weekly_program_schedule?select=*');
     const subscriptions = await fetchJson('push_subscriptions?select=*');
     let sent = 0;
+    const scheduleNotifications = await fetchJson(
+        'schedule_notifications?select=id,member_id,message,action&push_sent_at=is.null&order=created_at.asc&limit=100'
+    );
 
     for (const schedule of schedules) {
         const occurrence = scheduleOccurrence(schedule.day_of_week, schedule.start_time, now);
@@ -114,6 +117,29 @@ Deno.serve(async request => {
                 console.error('Push delivery failed:', error);
             }
         }
+    }
+    for (const notification of scheduleNotifications) {
+        for (const subscription of subscriptions.filter((item: any) => item.member_id === notification.member_id)) {
+            try {
+                await webpush.sendNotification({
+                    endpoint: subscription.endpoint,
+                    keys: { p256dh: subscription.p256dh, auth: subscription.auth }
+                }, JSON.stringify({
+                    title: 'Zen Wellness Club program güncellemesi',
+                    body: notification.message,
+                    tag: `schedule-notification-${notification.id}`,
+                    url: '/trainer-pro/'
+                }));
+                sent += 1;
+            } catch (error) {
+                console.error('Schedule update push failed:', error);
+            }
+        }
+        await fetchJson(`schedule_notifications?id=eq.${notification.id}`, {
+            method: 'PATCH',
+            headers: { Prefer: 'return=minimal' },
+            body: JSON.stringify({ push_sent_at: new Date().toISOString() })
+        });
     }
     return new Response(JSON.stringify({ sent }), {
         headers: { 'Content-Type': 'application/json' }

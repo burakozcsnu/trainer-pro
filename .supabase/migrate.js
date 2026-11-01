@@ -84,8 +84,11 @@ async function migrate() {
         action TEXT NOT NULL CHECK (action IN ('created', 'updated', 'deleted')),
         message TEXT NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        read_at TIMESTAMPTZ
+        read_at TIMESTAMPTZ,
+        push_sent_at TIMESTAMPTZ
       );
+      ALTER TABLE schedule_notifications
+        ADD COLUMN IF NOT EXISTS push_sent_at TIMESTAMPTZ;
 
       CREATE TABLE IF NOT EXISTS schedule_attendance (
         id BIGINT PRIMARY KEY,
