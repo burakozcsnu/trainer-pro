@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.92';
+    const APP_VERSION = '1.3.93';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -338,18 +338,38 @@
                 }
             });
         });
+        return { registration, subscription };
     }
 
-    function startMemberNotifications(member, schedules) {
+    async function updateMemberNotificationStatus() {
+        const status = document.getElementById('member-notification-status');
+        if (!status) return;
+        if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+            status.textContent = 'Bu iPhone/PWA kurulumu gerçek push bildirimlerini desteklemiyor.';
+            return;
+        }
+        if (Notification.permission === 'denied') {
+            status.textContent = 'Bildirim izni kapalı. iPhone Ayarları > Bildirimler bölümünden izin verin.';
+            return;
+        }
+        if (Notification.permission !== 'granted') {
+            status.textContent = 'Bildirimleri etkinleştir düğmesine basarak izin verin.';
+            return;
+        }
+        const registration = await navigator.serviceWorker.getRegistration('./');
+        const subscription = await registration?.pushManager.getSubscription();
+        status.textContent = subscription
+            ? 'Push bildirimleri aktif: 1 gün ve 1 saat önce hatırlatılacaksınız.'
+            : 'İzin verildi ancak cihaz aboneliği bulunamadı. Bildirimleri tekrar etkinleştirin.';
+    }
+
+    async function startMemberNotifications(member, schedules) {
         memberNotificationMember = member;
         memberNotificationSchedules = schedules;
         window.clearInterval(memberNotificationTimer);
         memberNotificationTimer = window.setInterval(checkMemberNotifications, 30000);
         checkMemberNotifications();
-        const status = document.getElementById('member-notification-status');
-        if (status && 'Notification' in window && Notification.permission === 'granted') {
-            status.textContent = 'Bildirimler açık: 1 gün ve 1 saat önce hatırlatılacaksınız.';
-        }
+        await updateMemberNotificationStatus();
     }
 
     window.enableMemberNotifications = async () => {
@@ -368,10 +388,21 @@
             return;
         }
         if (status) {
-            status.textContent = Notification.permission === 'granted'
-                ? 'Bildirimler açık: 1 gün ve 1 saat önce hatırlatılacaksınız.'
-                : 'Bildirim izni verilmedi. Tarayıcı ayarlarından izin verebilirsiniz.';
+            await updateMemberNotificationStatus();
         }
+    };
+
+    window.sendTestNotification = async () => {
+        const registration = await navigator.serviceWorker.getRegistration('./');
+        if (!registration) {
+            alert('Push servisi henüz kurulmamış. Önce bildirimleri etkinleştirin.');
+            return;
+        }
+        await registration.showNotification('Zen Wellness Club test bildirimi', {
+            body: 'iPhone push bildirimi başarıyla çalışıyor.',
+            icon: 'zen-wellness-icon.png',
+            tag: 'trainer-pro-test'
+        });
         checkMemberNotifications();
     };
 
@@ -398,7 +429,10 @@
                 <div class="member-portal-notification">
                     <strong>Seans hatırlatmaları</strong>
                     <span id="member-notification-status">24 saat ve 1 saat önce bildirim almak için izin verin.</span>
-                    <button class="btn-secondary" type="button" onclick="window.enableMemberNotifications()">Bildirimleri etkinleştir</button>
+                    <div class="member-notification-actions">
+                        <button class="btn-secondary" type="button" onclick="window.enableMemberNotifications()">Bildirimleri etkinleştir</button>
+                        <button class="btn-secondary" type="button" onclick="window.sendTestNotification()">Test bildirimi</button>
+                    </div>
                 </div>
             </section>
             <section class="member-portal-card member-portal-section" data-portal-section="schedule">

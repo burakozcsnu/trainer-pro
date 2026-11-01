@@ -955,8 +955,12 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
     font-size: 0.82rem;
 }
 .member-portal-notification button {
-    justify-self: start;
     margin-top: 0.25rem;
+}
+.member-notification-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 .member-schedule-list li {
     display: grid;
