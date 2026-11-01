@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.98';
+    const APP_VERSION = '1.3.99';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -2133,7 +2133,12 @@
                 ${dayEntries.length ? dayEntries.map(item => {
                     const member = state.members.find(candidate => candidate.id == item.member_id);
                     const hasConflict = conflictIds.has(String(item.id));
+                    const conflictLabel = hasConflict
+                        ? 'Bu üyenin başka bir seansıyla zaman çakışması var.'
+                        : '';
                     return `<button class="weekly-schedule-entry${hasConflict ? ' is-conflict' : ''}" type="button"
+                        aria-label="${escapePortalText(`${item.start_time.slice(0, 5)} ${member?.ad_soyad || 'Üye bulunamadı'} ${item.branch || ''} ${conflictLabel}`)}"
+                        title="${escapePortalText(conflictLabel)}"
                         onclick="window.openScheduleEditor(${item.id})">
                         <strong>${escapePortalText(item.start_time.slice(0, 5))}${item.end_time ? ` - ${escapePortalText(item.end_time.slice(0, 5))}` : ''}</strong>
                         <span>${escapePortalText(member?.ad_soyad || 'Üye bulunamadı')}</span>
@@ -2218,6 +2223,10 @@
         event.preventDefault();
         const id = document.getElementById('schedule-id').value;
         const memberId = document.getElementById('schedule-member').value;
+        if (!memberId) {
+            alert('Lütfen programa atanacak üyeyi seçin.');
+            return;
+        }
         const rows = [...document.querySelectorAll('[data-schedule-row]')].map(row => ({
             member_id: Number(memberId),
             day_of_week: Number(row.querySelector('[data-schedule-day]').value),
