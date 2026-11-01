@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.108';
+    const APP_VERSION = '1.3.109';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -2587,26 +2587,21 @@
         const groups = { 'Üst Ekstremite': [], 'Alt Ekstremite': [], 'Branşa Özel': [], 'Genel': [] };
 
         state.exercises.forEach(ex => {
-            const g = window.safeJSONParse(ex.gruplar, {});
-            const exBodyPart = g.bodyPart || '';
-            const exClassification = g.classification || [];
-            const exMuscles = g.muscles || [];
-            const exBranch = g.branch || ex.brans || 'Fitness';
-            const exStyles = g.styles || [];
-            const exDrill = g.drill || '';
-            const exRank = g.rank || '';
-            const exStyle = g.style || '';
-            const exEquipment = g.equipment || '';
+            if (!window.TrainerProExerciseDomain.matchesFilters(ex, {
+                bodyPart: filterBodyPart,
+                classification: filterClassification,
+                muscle: filterMuscle,
+                branch: filterBranch,
+                yogaStyle: filterYogaStyle,
+                karateDrill: filterKarateDrill,
+                karateRank: filterKarateRank,
+                karateStyle: filterKarateStyle,
+                equipment: filterEquipment
+            })) return;
 
-            if (filterBodyPart && exBodyPart !== filterBodyPart) return;
-            if (filterClassification && !exClassification.includes(filterClassification)) return;
-            if (filterMuscle && !exMuscles.includes(filterMuscle)) return;
-            if (filterBranch && exBranch !== filterBranch) return;
-            if (filterYogaStyle && !exStyles.includes(filterYogaStyle)) return;
-            if (filterKarateDrill && exDrill !== filterKarateDrill) return;
-            if (filterKarateRank && exRank !== filterKarateRank) return;
-            if (filterKarateStyle && exStyle !== filterKarateStyle) return;
-            if (filterEquipment && !exEquipment.split(',').map(item => item.trim()).includes(filterEquipment)) return;
+            const g = window.TrainerProExerciseDomain.normalize(ex);
+            const exBodyPart = g.bodyPart;
+            const exBranch = g.branch;
 
             if (exBodyPart === 'Üst Ekstremite') groups['Üst Ekstremite'].push(ex);
             else if (exBodyPart === 'Alt Ekstremite') groups['Alt Ekstremite'].push(ex);
@@ -2632,7 +2627,7 @@
                     <div id="ex-group-${safeName}" class="acc-body grid" style="display: ${displayStyle}">
                         ${list.map(ex => {
                             let tagsHtml = '';
-                            const g = window.safeJSONParse(ex.gruplar, {});
+                            const g = window.TrainerProExerciseDomain.normalize(ex);
                             if (g.bodyPart) tagsHtml += `<span class="tag">${g.bodyPart}</span>`;
                             if (g.classification) g.classification.forEach(c => tagsHtml += `<span class="tag">${c}</span>`);
                             if (g.muscles) g.muscles.forEach(m => tagsHtml += `<span class="tag secondary">${m}</span>`);
@@ -2927,8 +2922,23 @@
             equipment: document.getElementById('new-ex-equipment').value.trim(),
             level: document.getElementById('new-ex-level').value
         };
-        const newData = { id, ad: document.getElementById('new-ex-name').value, brans: gruplar.branch, gruplar: JSON.stringify(gruplar) };
-        await supabase.from('master_egzersizler').upsert(newData);
+        const newData = {
+            id,
+            ad: document.getElementById('new-ex-name').value,
+            brans: gruplar.branch,
+            gruplar: JSON.stringify(gruplar),
+            body_part: gruplar.bodyPart || null,
+            classifications: [],
+            style: gruplar.style || null,
+            drill: gruplar.drill || null,
+            difficulty: gruplar.level || null
+        };
+        const { error } = await supabase.from('master_egzersizler').upsert(newData);
+        if (error) {
+            console.error('[Exercise save] Supabase error:', error);
+            alert(`Egzersiz kaydedilemedi: ${error.message}`);
+            return;
+        }
         const oldData = existingId ? state.exercises.find(ex => ex.id == existingId) : null;
         window.pushToUndoLog(existingId ? 'UPDATE' : 'INSERT', 'master_egzersizler', oldData, newData, `Egzersiz: ${newData.ad}`);
         await sync();
