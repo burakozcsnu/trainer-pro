@@ -1758,6 +1758,12 @@ body,
     color: var(--text-dim);
     font-size: 0.75rem;
 }
+.member-card-trainer {
+    display: block;
+    margin-top: 0.35rem;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+}
 .schedule-picker {
     min-width: 0;
     padding: 0.85rem;

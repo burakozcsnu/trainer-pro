@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.103';
+    const APP_VERSION = '1.3.104';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -2176,6 +2176,7 @@
                     <div class="member-avatar">${icons[m.brans] || '👤'}</div>
                     <span class="member-card-arrow">→</span>
                 </div>
+                <small class="member-card-trainer">Eğitmen: ${escapePortalText(m.trainer_id === 'burak-ozcan' ? 'Burak Özcan' : 'Atanmadı')}</small>
                 <h3>${m.ad_soyad}</h3>
                 <p class="member-branch">${m.brans || 'Branş belirtilmemiş'}</p>
                 <p class="member-schedule-summary">🗓️ ${escapePortalText(scheduleText)}</p>
@@ -2397,13 +2398,18 @@
             alert('Lütfen programa atanacak üyeyi seçin.');
             return;
         }
+        const assignedMember = state.members.find(member => String(member.id) === String(memberId));
+        if (!assignedMember?.trainer_id) {
+            alert('Bu üyeye önce yönetici panelindeki üye kartından bir eğitmen atayın.');
+            return;
+        }
         const rows = [...document.querySelectorAll('[data-schedule-row]')].map(row => ({
             member_id: Number(memberId),
             day_of_week: Number(row.querySelector('[data-schedule-day]').value),
             start_time: row.querySelector('[data-schedule-start]').value,
             end_time: row.querySelector('[data-schedule-end]').value,
             branch: row.querySelector('[data-schedule-branch]').value,
-            trainer_id: 'burak-ozcan'
+            trainer_id: assignedMember.trainer_id
         }));
         if (!rows.length || rows.some(row => !isValidScheduleTime(row.start_time) || !isValidScheduleTime(row.end_time))) {
             alert('Lütfen her seans için gün, başlangıç ve bitiş saati seçin.');
@@ -2427,7 +2433,7 @@
         }
         const baseData = {
             member_id: memberId,
-            trainer_id: 'burak-ozcan',
+            trainer_id: assignedMember.trainer_id,
             notes: document.getElementById('schedule-notes').value.trim(),
             updated_at: new Date().toISOString()
         };
@@ -2809,6 +2815,7 @@
         document.getElementById('edit-member-id').value = m.id;
         document.getElementById('m-name').value = m.ad_soyad;
         document.getElementById('m-branch').value = m.brans;
+        document.getElementById('m-trainer').value = m.trainer_id || '';
         if(document.getElementById('m-height')) { document.getElementById('m-height').value = m.boy || ''; }
         if(document.getElementById('m-gender')) { document.getElementById('m-gender').value = m.cinsiyet || 'Erkek'; }
         if(document.getElementById('m-reg-date')) { document.getElementById('m-reg-date').value = m.kayit_tarihi || ''; }
@@ -2825,6 +2832,7 @@
             id,
             ad_soyad: document.getElementById('m-name').value.trim(),
             brans: document.getElementById('m-branch').value,
+            trainer_id: document.getElementById('m-trainer').value || null,
             boy: heightVal || null,
             cinsiyet: document.getElementById('m-gender').value,
             kayit_tarihi: document.getElementById('m-reg-date').value

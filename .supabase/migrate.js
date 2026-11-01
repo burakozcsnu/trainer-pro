@@ -41,7 +41,8 @@ async function migrate() {
         ADD COLUMN IF NOT EXISTS beklentiler TEXT,
         ADD COLUMN IF NOT EXISTS degerlendirme_verileri JSONB DEFAULT '{}'::jsonb,
         ADD COLUMN IF NOT EXISTS degerlendirme_tamamlandi BOOLEAN NOT NULL DEFAULT false,
-        ADD COLUMN IF NOT EXISTS degerlendirme_tarihi TIMESTAMPTZ;
+        ADD COLUMN IF NOT EXISTS degerlendirme_tarihi TIMESTAMPTZ,
+        ADD COLUMN IF NOT EXISTS trainer_id TEXT;
 
       CREATE TABLE IF NOT EXISTS trainers (
         id TEXT PRIMARY KEY,
@@ -53,6 +54,16 @@ async function migrate() {
       INSERT INTO trainers (id, full_name)
       VALUES ('burak-ozcan', 'Burak Özcan')
       ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name;
+
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'uyeler_trainer_id_fkey'
+        ) THEN
+          ALTER TABLE uyeler ADD CONSTRAINT uyeler_trainer_id_fkey
+            FOREIGN KEY (trainer_id) REFERENCES trainers(id);
+        END IF;
+      END $$;
 
       CREATE TABLE IF NOT EXISTS weekly_program_schedule (
         id BIGINT PRIMARY KEY,
