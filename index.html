@@ -475,6 +475,21 @@
                         <option value="Kata">Kata</option>
                         <option value="Kumite">Kumite</option>
                     </select>
+                    <select id="filter-ex-karate-rank" onchange="window.renderExercises()" class="ex-select">
+                        <option value="">Tüm Karate Seviyeleri</option>
+                        <option value="6. Kyu (Sarı)">6. Kyu (Sarı)</option>
+                        <option value="5. Kyu">5. Kyu</option>
+                        <option value="4. Kyu">4. Kyu</option>
+                        <option value="3. Kyu">3. Kyu</option>
+                        <option value="2. Kyu">2. Kyu</option>
+                        <option value="1. Kyu">1. Kyu</option>
+                        <option value="1. Dan">1. Dan</option>
+                        <option value="2. Dan">2. Dan</option>
+                    </select>
+                    <select id="filter-ex-karate-style" onchange="window.renderExercises()" class="ex-select">
+                        <option value="">Tüm Karate Stilleri</option>
+                        <option value="Shotokan">Shotokan</option>
+                    </select>
                     <select id="filter-ex-equipment" onchange="window.renderExercises()" class="ex-select">
                         <option value="">Tüm Ekipmanlar</option>
                         <option value="Vücut ağırlığı">Vücut ağırlığı</option>
@@ -921,7 +936,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.3.106"></script>
+    <script src="script.js?v=1.3.107"></script>
 </body>
 
 </html>

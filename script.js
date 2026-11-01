@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.106';
+    const APP_VERSION = '1.3.107';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -2576,6 +2576,8 @@
         const filterBranch = document.getElementById('filter-ex-branch')?.value || '';
         const filterYogaStyle = document.getElementById('filter-ex-yoga-style')?.value || '';
         const filterKarateDrill = document.getElementById('filter-ex-karate-drill')?.value || '';
+        const filterKarateRank = document.getElementById('filter-ex-karate-rank')?.value || '';
+        const filterKarateStyle = document.getElementById('filter-ex-karate-style')?.value || '';
         const filterEquipment = document.getElementById('filter-ex-equipment')?.value || '';
 
         const groups = { 'Üst Ekstremite': [], 'Alt Ekstremite': [], 'Branşa Özel': [], 'Genel': [] };
@@ -2588,6 +2590,8 @@
             const exBranch = g.branch || ex.brans || 'Fitness';
             const exStyles = g.styles || [];
             const exDrill = g.drill || '';
+            const exRank = g.rank || '';
+            const exStyle = g.style || '';
             const exEquipment = g.equipment || '';
 
             if (filterBodyPart && exBodyPart !== filterBodyPart) return;
@@ -2596,6 +2600,8 @@
             if (filterBranch && exBranch !== filterBranch) return;
             if (filterYogaStyle && !exStyles.includes(filterYogaStyle)) return;
             if (filterKarateDrill && exDrill !== filterKarateDrill) return;
+            if (filterKarateRank && exRank !== filterKarateRank) return;
+            if (filterKarateStyle && exStyle !== filterKarateStyle) return;
             if (filterEquipment && !exEquipment.split(',').map(item => item.trim()).includes(filterEquipment)) return;
 
             if (exBodyPart === 'Üst Ekstremite') groups['Üst Ekstremite'].push(ex);
@@ -2605,7 +2611,7 @@
         });
 
         const isFiltered = filterBodyPart || filterClassification || filterMuscle || filterBranch ||
-            filterYogaStyle || filterKarateDrill || filterEquipment;
+            filterYogaStyle || filterKarateDrill || filterKarateRank || filterKarateStyle || filterEquipment;
 
         container.innerHTML = Object.entries(groups).map(([name, list]) => {
             if (list.length === 0) return '';
@@ -2629,7 +2635,9 @@
                             if (g.branch) tagsHtml += `<span class="tag accent">${g.branch}</span>`;
                             else if (ex.brans) tagsHtml += `<span class="tag accent">${ex.brans}</span>`;
                             if (g.styles) g.styles.forEach(style => tagsHtml += `<span class="tag secondary">Stil: ${style}</span>`);
+                            if (g.style) tagsHtml += `<span class="tag secondary">Stil: ${g.style}</span>`;
                             if (g.drill) tagsHtml += `<span class="tag secondary">Drill: ${g.drill}</span>`;
+                            if (g.rank) tagsHtml += `<span class="tag secondary">Seviye: ${g.rank}</span>`;
                             if (g.equipment) tagsHtml += `<span class="tag">${g.equipment}</span>`;
                             if (g.level) tagsHtml += `<span class="tag secondary">${g.level}</span>`;
                             if (g.sanskritName) tagsHtml += `<span class="tag secondary">Sanskrit: ${g.sanskritName}</span>`;

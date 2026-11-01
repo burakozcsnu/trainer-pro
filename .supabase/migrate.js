@@ -17,6 +17,7 @@ const client = new Client({
 });
 
 const extendedExerciseCatalog = require('./exercise_catalog_extended.json');
+const karateShotokanCatalog = require('./karate_shotokan_catalog');
 
 function deriveExerciseTaxonomy({ name, branch, bodyPart, muscles }) {
   const text = `${name} ${muscles.join(' ')}`.toLowerCase();
@@ -114,9 +115,17 @@ function validateExtendedCatalog() {
   }
 }
 
+function validateKarateCatalog() {
+  const names = karateShotokanCatalog.map(exercise => exercise.name);
+  if (new Set(names).size !== names.length || karateShotokanCatalog.some(exercise => !exercise.rank || !exercise.drill)) {
+    throw new Error('Shotokan catalog entries must have unique names, rank, and drill metadata.');
+  }
+}
+
 async function migrate() {
   try {
     validateExtendedCatalog();
+    validateKarateCatalog();
     await client.connect();
     console.log('Connected to Supabase successfully.');
 
@@ -297,6 +306,18 @@ async function migrate() {
           source: exercise.source,
           sourceUrl: exercise.sourceUrl
         })
+      ]);
+    }
+    for (const [index, exercise] of karateShotokanCatalog.entries()) {
+      await client.query(`
+        INSERT INTO master_egzersizler (id, ad, brans, gruplar)
+        VALUES ($1, $2, $3, $4::jsonb)
+        ON CONFLICT (ad) DO UPDATE SET brans = EXCLUDED.brans, gruplar = EXCLUDED.gruplar
+      `, [
+        930000000000 + index,
+        exercise.name,
+        exercise.branch,
+        JSON.stringify(exercise)
       ]);
     }
     console.log('Migration successful.');
