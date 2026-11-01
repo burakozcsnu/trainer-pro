@@ -29,7 +29,11 @@ const tables = [
   'schedule_notifications',
   'schedule_attendance',
   'workout_completions',
-  'trainers'
+  'trainers',
+  'schema_migrations',
+  'device_connections',
+  'health_metrics',
+  'workout_sessions'
 ];
 
 async function migrate() {
@@ -60,6 +64,9 @@ async function migrate() {
       }
       if (table === 'workout_completions') {
         await client.query(`DROP POLICY IF EXISTS "workout_completions_member_access" ON workout_completions;`);
+      }
+      if (['device_connections', 'health_metrics', 'workout_sessions'].includes(table)) {
+        await client.query(`DROP POLICY IF EXISTS "${table}_member_access" ON ${table};`);
       }
       await client.query(`
         CREATE POLICY "${table}_admin_access"
@@ -263,7 +270,62 @@ async function migrate() {
         WHERE uyeler.id = workout_completions.member_id
           AND uyeler.auth_user_id = auth.uid()
       ));
+
+      CREATE POLICY "device_connections_member_access"
+      ON device_connections
+      FOR ALL
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = device_connections.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ))
+      WITH CHECK (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = device_connections.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
+
+      CREATE POLICY "health_metrics_member_access"
+      ON health_metrics
+      FOR ALL
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = health_metrics.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ))
+      WITH CHECK (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = health_metrics.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
+
+      CREATE POLICY "workout_sessions_member_access"
+      ON workout_sessions
+      FOR ALL
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = workout_sessions.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ))
+      WITH CHECK (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = workout_sessions.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
     `);
+    const requiredPolicies = ['device_connections_member_access', 'health_metrics_member_access', 'workout_sessions_member_access'];
+    const policyResult = await client.query(
+      `SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND policyname = ANY($1::text[])`,
+      [requiredPolicies]
+    );
+    const foundPolicies = new Set(policyResult.rows.map(row => row.policyname));
+    const missingPolicies = requiredPolicies.filter(policy => !foundPolicies.has(policy));
+    if (missingPolicies.length > 0) {
+      throw new Error(`Missing required RLS policies: ${missingPolicies.join(', ')}`);
+    }
     await client.query(`NOTIFY pgrst, 'reload schema';`);
     console.log('Admin-only RLS policies enabled.');
   } catch (error) {

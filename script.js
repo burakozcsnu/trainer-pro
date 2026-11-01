@@ -269,7 +269,7 @@
 
     let state = {
         members: [], exercises: [], programs: [], measurements: [], workouts: [], documents: [], schedules: [], cloudFiles: [],
-        foods: [], diets: [],
+        foods: [], diets: [], healthMetrics: [], workoutSessions: [], deviceConnections: [],
         activeMemberId: null, undoStack: [], navHistory: ['members-view'],
         surveyAnswers: {}, currentStep: 0, measurementRequired: false,
         assessmentStep: 0, assessmentAnswers: {}, assessmentMember: null
@@ -951,7 +951,10 @@
         'weekly_program_schedule',
         'master_egzersizler',
         'master_besinler',
-        'beslenme_planlari'
+        'beslenme_planlari',
+        'device_connections',
+        'health_metrics',
+        'workout_sessions'
     ];
 
     const MEASUREMENT_FIELDS = [
@@ -3902,6 +3905,9 @@ window.editMeasurement = (id) => {
                 exercises: state.exercises,
                 foods: state.foods,
                 diets: state.diets,
+                healthMetrics: state.healthMetrics,
+                workoutSessions: state.workoutSessions,
+                deviceConnections: state.deviceConnections,
                 lastSync: new Date().getTime()
             };
             localStorage.setItem('trainerpro_cache', JSON.stringify(stateToSave));
@@ -3924,6 +3930,9 @@ window.editMeasurement = (id) => {
                 state.exercises = data.exercises || [];
                 state.foods = data.foods || [];
                 state.diets = data.diets || [];
+                state.healthMetrics = data.healthMetrics || [];
+                state.workoutSessions = data.workoutSessions || [];
+                state.deviceConnections = data.deviceConnections || [];
                 return true;
             }
         } catch (e) {
@@ -3964,7 +3973,10 @@ window.editMeasurement = (id) => {
                 supabase.from('weekly_program_schedule').select('*'),
                 fetchAll('master_egzersizler'),
                 fetchAll('master_besinler'),
-                supabase.from('beslenme_planlari').select('*')
+                supabase.from('beslenme_planlari').select('*'),
+                supabase.from('health_metrics').select('*'),
+                supabase.from('workout_sessions').select('*'),
+                supabase.from('device_connections').select('*')
             ]);
 
 
@@ -4022,6 +4034,9 @@ window.editMeasurement = (id) => {
             state.exercises = results[6].data || [];
             state.foods = results[7].data || [];
             state.diets = results[8].data || [];
+            state.healthMetrics = results[9].data || [];
+            state.workoutSessions = results[10].data || [];
+            state.deviceConnections = results[11].data || [];
 
 
             refreshAll();

@@ -131,7 +131,18 @@ async function migrate() {
 
     await client.query(`
       ALTER TABLE master_egzersizler
-        ADD COLUMN IF NOT EXISTS gruplar JSONB DEFAULT '{}'::jsonb;
+        ADD COLUMN IF NOT EXISTS gruplar JSONB DEFAULT '{}'::jsonb,
+        ADD COLUMN IF NOT EXISTS body_part TEXT,
+        ADD COLUMN IF NOT EXISTS classifications TEXT[] NOT NULL DEFAULT '{}',
+        ADD COLUMN IF NOT EXISTS style TEXT,
+        ADD COLUMN IF NOT EXISTS drill TEXT,
+        ADD COLUMN IF NOT EXISTS difficulty TEXT,
+        ADD COLUMN IF NOT EXISTS source_url TEXT;
+
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        version TEXT PRIMARY KEY,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
 
       ALTER TABLE uyeler
         ADD COLUMN IF NOT EXISTS boy NUMERIC,
@@ -261,13 +272,83 @@ async function migrate() {
         UNIQUE (member_id, workout_id, exercise_index, completion_date)
       );
 
+      CREATE TABLE IF NOT EXISTS device_connections (
+        id BIGINT PRIMARY KEY,
+        member_id BIGINT NOT NULL REFERENCES uyeler(id) ON DELETE CASCADE,
+        platform TEXT NOT NULL CHECK (platform IN ('ios', 'watchos', 'web')),
+        device_identifier TEXT NOT NULL,
+        device_name TEXT,
+        status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'revoked')),
+        permissions JSONB NOT NULL DEFAULT '{}'::jsonb,
+        last_seen_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (member_id, platform, device_identifier)
+      );
+
+      CREATE TABLE IF NOT EXISTS health_metrics (
+        id BIGINT PRIMARY KEY,
+        member_id BIGINT NOT NULL REFERENCES uyeler(id) ON DELETE CASCADE,
+        device_connection_id BIGINT REFERENCES device_connections(id) ON DELETE SET NULL,
+        source TEXT NOT NULL CHECK (source IN ('healthkit', 'manual', 'web')),
+        metric_type TEXT NOT NULL,
+        value NUMERIC NOT NULL,
+        unit TEXT NOT NULL,
+        recorded_at TIMESTAMPTZ NOT NULL,
+        external_id TEXT,
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (member_id, source, metric_type, recorded_at, external_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS workout_sessions (
+        id BIGINT PRIMARY KEY,
+        member_id BIGINT NOT NULL REFERENCES uyeler(id) ON DELETE CASCADE,
+        device_connection_id BIGINT REFERENCES device_connections(id) ON DELETE SET NULL,
+        schedule_id BIGINT REFERENCES weekly_program_schedule(id) ON DELETE SET NULL,
+        source TEXT NOT NULL CHECK (source IN ('trainer_pro', 'healthkit', 'manual')),
+        activity_type TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'completed' CHECK (status IN ('planned', 'active', 'completed', 'cancelled')),
+        started_at TIMESTAMPTZ NOT NULL,
+        ended_at TIMESTAMPTZ,
+        active_energy_kcal NUMERIC,
+        average_heart_rate NUMERIC,
+        maximum_heart_rate NUMERIC,
+        external_id TEXT,
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (member_id, source, external_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS health_metrics_member_recorded_idx
+        ON health_metrics (member_id, recorded_at DESC);
+      CREATE INDEX IF NOT EXISTS workout_sessions_member_started_idx
+        ON workout_sessions (member_id, started_at DESC);
+
+      UPDATE master_egzersizler
+      SET
+        body_part = NULLIF(gruplar ->> 'bodyPart', ''),
+        classifications = COALESCE(ARRAY(
+          SELECT jsonb_array_elements_text(COALESCE(gruplar -> 'classification', '[]'::jsonb))
+        ), '{}'),
+        style = COALESCE(gruplar ->> 'style', NULLIF(gruplar -> 'styles' ->> 0, '')),
+        drill = NULLIF(gruplar ->> 'drill', ''),
+        difficulty = NULLIF(gruplar ->> 'level', ''),
+        source_url = NULLIF(gruplar ->> 'sourceUrl', '');
+
       NOTIFY pgrst, 'reload schema';
     `);
     for (const [index, [name, branch, bodyPart, muscles, equipment, level]] of exerciseCatalog.entries()) {
+      const taxonomy = deriveExerciseTaxonomy({ name, branch, bodyPart, muscles });
       await client.query(`
-        INSERT INTO master_egzersizler (id, ad, brans, gruplar)
-        VALUES ($1, $2, $3, $4::jsonb)
-        ON CONFLICT (ad) DO UPDATE SET brans = EXCLUDED.brans, gruplar = EXCLUDED.gruplar
+        INSERT INTO master_egzersizler
+          (id, ad, brans, gruplar, body_part, classifications, style, drill, difficulty, source_url)
+        VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10)
+        ON CONFLICT (ad) DO UPDATE SET
+          brans = EXCLUDED.brans, gruplar = EXCLUDED.gruplar, body_part = EXCLUDED.body_part,
+          classifications = EXCLUDED.classifications, style = EXCLUDED.style, drill = EXCLUDED.drill,
+          difficulty = EXCLUDED.difficulty, source_url = EXCLUDED.source_url
       `, [
         910000000000 + index,
         name,
@@ -280,14 +361,24 @@ async function migrate() {
           level,
           source: 'Zen Wellness Club core library',
           ...deriveExerciseTaxonomy({ name, branch, bodyPart, muscles })
-        })
+        }),
+        bodyPart,
+        taxonomy.classification,
+        taxonomy.styles?.[0] || null,
+        taxonomy.drill || null,
+        level,
+        null
       ]);
     }
     for (const [index, exercise] of extendedExerciseCatalog.entries()) {
       await client.query(`
-        INSERT INTO master_egzersizler (id, ad, brans, gruplar)
-        VALUES ($1, $2, $3, $4::jsonb)
-        ON CONFLICT (ad) DO UPDATE SET brans = EXCLUDED.brans, gruplar = EXCLUDED.gruplar
+        INSERT INTO master_egzersizler
+          (id, ad, brans, gruplar, body_part, classifications, style, drill, difficulty, source_url)
+        VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10)
+        ON CONFLICT (ad) DO UPDATE SET
+          brans = EXCLUDED.brans, gruplar = EXCLUDED.gruplar, body_part = EXCLUDED.body_part,
+          classifications = EXCLUDED.classifications, style = EXCLUDED.style, drill = EXCLUDED.drill,
+          difficulty = EXCLUDED.difficulty, source_url = EXCLUDED.source_url
       `, [
         920000000000 + index,
         exercise.name,
@@ -305,21 +396,42 @@ async function migrate() {
           japaneseName: exercise.japaneseName,
           source: exercise.source,
           sourceUrl: exercise.sourceUrl
-        })
+        }),
+        exercise.bodyPart,
+        exercise.classification,
+        exercise.styles?.[0] || null,
+        exercise.drill || null,
+        exercise.level,
+        exercise.sourceUrl || null
       ]);
     }
     for (const [index, exercise] of karateShotokanCatalog.entries()) {
       await client.query(`
-        INSERT INTO master_egzersizler (id, ad, brans, gruplar)
-        VALUES ($1, $2, $3, $4::jsonb)
-        ON CONFLICT (ad) DO UPDATE SET brans = EXCLUDED.brans, gruplar = EXCLUDED.gruplar
+        INSERT INTO master_egzersizler
+          (id, ad, brans, gruplar, body_part, classifications, style, drill, difficulty, source_url)
+        VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10)
+        ON CONFLICT (ad) DO UPDATE SET
+          brans = EXCLUDED.brans, gruplar = EXCLUDED.gruplar, body_part = EXCLUDED.body_part,
+          classifications = EXCLUDED.classifications, style = EXCLUDED.style, drill = EXCLUDED.drill,
+          difficulty = EXCLUDED.difficulty, source_url = EXCLUDED.source_url
       `, [
         930000000000 + index,
         exercise.name,
         exercise.branch,
-        JSON.stringify(exercise)
+        JSON.stringify(exercise),
+        exercise.bodyPart,
+        exercise.classification,
+        exercise.style || null,
+        exercise.drill,
+        exercise.level,
+        exercise.sourceUrl
       ]);
     }
+    await client.query(`
+      INSERT INTO schema_migrations (version)
+      VALUES ('2026-11-01-data-foundation')
+      ON CONFLICT (version) DO NOTHING
+    `);
     console.log('Migration successful.');
 
   } catch (err) {
