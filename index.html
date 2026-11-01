@@ -220,6 +220,18 @@
                     </div>
                     <p>Bir seansa tıklayarak gün, saat, üye ve branş bilgilerini güncelleyebilirsiniz.</p>
                 </div>
+                <div class="schedule-filters" aria-label="Çizelge filtreleri">
+                    <label>Üye / eğitmen
+                        <select id="schedule-filter-member" onchange="window.applyScheduleFilters()">
+                            <option value="">Tümü</option>
+                        </select>
+                    </label>
+                    <label>Branş
+                        <select id="schedule-filter-branch" onchange="window.applyScheduleFilters()">
+                            <option value="">Tümü</option>
+                        </select>
+                    </label>
+                </div>
                 <div id="weekly-schedule-grid" class="weekly-schedule-grid"></div>
             </section>
 
@@ -835,7 +847,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.3.101"></script>
+    <script src="script.js?v=1.3.102"></script>
 </body>
 
 </html>

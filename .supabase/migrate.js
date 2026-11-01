@@ -77,6 +77,38 @@ async function migrate() {
         UNIQUE (subscription_id, schedule_id, occurrence_key, reminder_type)
       );
 
+      CREATE TABLE IF NOT EXISTS schedule_notifications (
+        id BIGINT PRIMARY KEY,
+        member_id BIGINT NOT NULL REFERENCES uyeler(id) ON DELETE CASCADE,
+        schedule_id BIGINT REFERENCES weekly_program_schedule(id) ON DELETE SET NULL,
+        action TEXT NOT NULL CHECK (action IN ('created', 'updated', 'deleted')),
+        message TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        read_at TIMESTAMPTZ
+      );
+
+      CREATE TABLE IF NOT EXISTS schedule_attendance (
+        id BIGINT PRIMARY KEY,
+        member_id BIGINT NOT NULL REFERENCES uyeler(id) ON DELETE CASCADE,
+        schedule_id BIGINT NOT NULL REFERENCES weekly_program_schedule(id) ON DELETE CASCADE,
+        occurrence_date DATE NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('attending', 'declined')),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (member_id, schedule_id, occurrence_date)
+      );
+
+      CREATE TABLE IF NOT EXISTS workout_completions (
+        id BIGINT PRIMARY KEY,
+        member_id BIGINT NOT NULL REFERENCES uyeler(id) ON DELETE CASCADE,
+        workout_id BIGINT NOT NULL REFERENCES antrenmanlar(id) ON DELETE CASCADE,
+        exercise_index INTEGER NOT NULL,
+        completion_date DATE NOT NULL,
+        completed BOOLEAN NOT NULL DEFAULT true,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (member_id, workout_id, exercise_index, completion_date)
+      );
+
       NOTIFY pgrst, 'reload schema';
     `);
     console.log('Migration successful.');

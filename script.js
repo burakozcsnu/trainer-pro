@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.101';
+    const APP_VERSION = '1.3.102';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -123,12 +123,25 @@
         document.getElementById('brand-splash')?.classList.add('is-hidden');
         init();
     };
+    let activeMemberPortalMemberId = null;
     const enterMemberPortal = () => {
         document.body.classList.add('member-portal-active');
         document.getElementById('brand-splash')?.classList.add('is-hidden');
         document.getElementById('app-wrapper')?.setAttribute('hidden', '');
         document.getElementById('member-portal')?.removeAttribute('hidden');
         loadMemberPortal();
+    };
+    const createScheduleNotification = async ({ memberId, scheduleId = null, action, message }) => {
+        const { error } = await supabase.from('schedule_notifications').insert({
+            id: Date.now(),
+            member_id: memberId,
+            schedule_id: scheduleId,
+            action,
+            message
+        });
+        if (error) {
+            handleError(error, 'Schedule notification');
+        }
     };
     const exitAdminPortal = () => {
         document.body.classList.remove('member-portal-active');
@@ -438,7 +451,8 @@
         }
     };
 
-    const renderMemberPortal = ({ member, measurements, workouts, diets, documents, schedules, deliveries, pushEnabled }) => {
+    const renderMemberPortal = ({ member, measurements, workouts, diets, documents, schedules, deliveries, notifications = [], attendance = [], completions = [], pushEnabled }) => {
+        activeMemberPortalMemberId = member.id;
         const sortedMeasurements = [...measurements].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
         const sortedWorkouts = [...workouts].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
         const sortedDiets = [...diets].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
@@ -446,6 +460,42 @@
             Number(a.day_of_week) - Number(b.day_of_week) || a.start_time.localeCompare(b.start_time));
         const sortedDeliveries = [...deliveries].sort((a, b) =>
             new Date(b.delivered_at) - new Date(a.delivered_at));
+        const sortedNotifications = [...notifications].sort((a, b) =>
+            new Date(b.created_at) - new Date(a.created_at));
+        const attendanceByKey = new Map(attendance.map(item => [`${item.schedule_id}:${item.occurrence_date}`, item.status]));
+        const completionByKey = new Map(completions.map(item => [`${item.workout_id}:${item.exercise_index}:${item.completion_date}`, item.completed]));
+        const todayDate = new Date().toISOString().slice(0, 10);
+        const dailyExercises = sortedWorkouts.flatMap(workout => {
+            const sets = window.safeJSONParse(workout.setler, []);
+            return sets.map((set, index) => ({ workout, set, index }));
+        });
+        const exerciseMarkup = dailyExercises.length ? dailyExercises.map(({ workout, set, index }) => {
+            const key = `${workout.id}:${index}:${todayDate}`;
+            const completed = completionByKey.get(key);
+            return `<li class="member-exercise-item">
+                <span><strong>${escapePortalText(set.ad || 'Egzersiz')}</strong><small>${escapePortalText(workout.sablon || 'Antrenman')} · ${escapePortalText(set.set || set.tekrar || '')}</small></span>
+                <button class="btn-secondary" type="button" onclick="window.toggleWorkoutExercise(${workout.id}, ${index}, ${completed ? 'false' : 'true'})">${completed ? 'Tamamlandı ✓' : 'Tamamla'}</button>
+            </li>`;
+        }).join('') : '<p class="member-portal-muted">Bugün için egzersiz listesi bulunmuyor.</p>';
+        const nextOccurrenceDate = day => {
+            const today = new Date();
+            const todayDay = today.getDay() || 7;
+            const offset = (Number(day) - todayDay + 7) % 7;
+            today.setDate(today.getDate() + offset);
+            return today.toISOString().slice(0, 10);
+        };
+        const calendarMarkup = scheduleDays.map(([day, label]) => {
+            const daySchedules = sortedSchedules.filter(item => Number(item.day_of_week) === day);
+            return `<div class="member-calendar-day"><strong>${label}</strong>${daySchedules.length ? daySchedules.map(item => {
+                const date = nextOccurrenceDate(day);
+                const key = `${item.id}:${date}`;
+                const status = attendanceByKey.get(key);
+                return `<div class="member-calendar-session">
+                    <span>${escapePortalText(item.start_time.slice(0, 5))} · ${escapePortalText(item.branch)}</span>
+                    <button class="btn-secondary" type="button" onclick="window.toggleScheduleAttendance(${item.id}, '${date}', '${status === 'attending' ? 'declined' : 'attending'}')">${status === 'attending' ? 'Katılacağım ✓' : status === 'declined' ? 'Katılmayacağım' : 'Katılacağım'}</button>
+                </div>`;
+            }).join('') : '<span class="member-portal-muted">Seans yok</span>'}</div>`;
+        }).join('');
         const scheduleById = new Map(sortedSchedules.map(schedule => [String(schedule.id), schedule]));
         const latest = sortedMeasurements[0];
         const metrics = [
@@ -473,6 +523,7 @@
             </section>
             <section class="member-portal-card member-portal-section" data-portal-section="schedule">
                 <h2>🗓️ Haftalık programım</h2>
+                <div class="member-schedule-calendar">${calendarMarkup}</div>
                 ${sortedSchedules.length ? `<ul class="member-portal-list member-schedule-list">${sortedSchedules.map(item => `
                     <li>
                         <strong>${escapePortalText(getScheduleDayName(item.day_of_week))}</strong>
@@ -484,6 +535,12 @@
             <section class="member-portal-card member-portal-section" data-portal-section="notifications">
                 <h2>🔔 Bildirim Merkezi</h2>
                 <p class="member-portal-muted">Bu cihazdaki seans hatırlatmaları ve gönderim geçmişi.</p>
+                ${sortedNotifications.length ? `<ul class="member-portal-list member-notification-history">${sortedNotifications.slice(0, 20).map(notification => `
+                    <li>
+                        <strong>${escapePortalText(notification.action === 'deleted' ? 'Seans kaldırıldı' : notification.action === 'created' ? 'Yeni seans eklendi' : 'Seans güncellendi')}</strong>
+                        <span>${escapePortalText(notification.message)} · ${escapePortalText(new Date(notification.created_at).toLocaleString('tr-TR'))}</span>
+                    </li>
+                `).join('')}</ul>` : ''}
                 ${sortedDeliveries.length ? `<ul class="member-portal-list member-notification-history">${sortedDeliveries.slice(0, 20).map(delivery => {
                     const schedule = scheduleById.get(String(delivery.schedule_id));
                     const timing = delivery.reminder_type === 'day-before' ? '1 gün önce' : '1 saat önce';
@@ -518,7 +575,9 @@
                 </section>
 
                 <section class="member-portal-card member-portal-section" data-portal-section="workouts">
-                    <h2 style="margin-bottom:1rem; color:var(--accent);">🏋️ Antrenman geçmişi</h2>
+                    <h2 style="margin-bottom:1rem; color:var(--accent);">🏋️ Günlük egzersizler</h2>
+                    <ul class="member-portal-list member-exercise-list">${exerciseMarkup}</ul>
+                    <h3 style="margin:1rem 0 0.75rem;">Antrenman geçmişi</h3>
                     ${sortedWorkouts.length ? `<ul class="member-portal-list">${sortedWorkouts.slice(0, 10).map(workout => `
                         <li style="background:rgba(255,255,255,0.02); padding:1rem; border-radius:8px; margin-bottom:0.5rem; border:1px solid rgba(255,255,255,0.05);">
                             <strong>${escapePortalText(workout.sablon || 'Antrenman')}</strong><br>
@@ -560,6 +619,43 @@
             </div>`;
         window.selectMemberPortalTab('overview');
         startMemberNotifications(member, sortedSchedules, pushEnabled);
+    };
+
+    window.toggleScheduleAttendance = async (scheduleId, occurrenceDate, status) => {
+        if (!activeMemberPortalMemberId) return;
+        const { error } = await supabase.from('schedule_attendance').upsert({
+            id: Date.now(),
+            member_id: activeMemberPortalMemberId,
+            schedule_id: scheduleId,
+            occurrence_date: occurrenceDate,
+            status,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'member_id,schedule_id,occurrence_date' });
+        if (error) {
+            handleError(error, 'Schedule attendance');
+            alert(`Katılım durumu kaydedilemedi: ${error.message}`);
+            return;
+        }
+        await loadMemberPortal();
+    };
+
+    window.toggleWorkoutExercise = async (workoutId, exerciseIndex, completed) => {
+        if (!activeMemberPortalMemberId) return;
+        const { error } = await supabase.from('workout_completions').upsert({
+            id: Date.now(),
+            member_id: activeMemberPortalMemberId,
+            workout_id: workoutId,
+            exercise_index: exerciseIndex,
+            completion_date: new Date().toISOString().slice(0, 10),
+            completed,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'member_id,workout_id,exercise_index,completion_date' });
+        if (error) {
+            handleError(error, 'Workout completion');
+            alert(`Egzersiz durumu kaydedilemedi: ${error.message}`);
+            return;
+        }
+        await loadMemberPortal();
     };
 
     window.selectMemberPortalTab = (tab) => {
@@ -775,14 +871,17 @@
             if (!member) throw new Error('Bu kullanıcı henüz aktif bir danışan profiline bağlanmamış. Lütfen antrenörünüzden sizi sisteme dahil etmesini isteyin.');
 
             // Sonra o member'in ID'siyle güvenli bir şekilde filtreleyerek sadece ONUN verilerini çek
-            const [measurementsResult, workoutsResult, dietsResult, documentsResult, schedulesResult, pushResult, deliveriesResult] = await Promise.all([
+            const [measurementsResult, workoutsResult, dietsResult, documentsResult, schedulesResult, pushResult, deliveriesResult, notificationsResult, attendanceResult, completionsResult] = await Promise.all([
                 supabase.from('olcumler').select('*').eq('member_id', member.id),
                 supabase.from('antrenmanlar').select('*').eq('member_id', member.id),
                 supabase.from('beslenme_planlari').select('*').eq('member_id', member.id),
                 supabase.from('dokumanlar').select('*').eq('member_id', member.id),
                 supabase.from('weekly_program_schedule').select('*').eq('member_id', member.id),
                 supabase.from('push_subscriptions').select('id,endpoint').eq('member_id', member.id),
-                supabase.from('push_reminder_deliveries').select('id,subscription_id,schedule_id,reminder_type,delivered_at').order('delivered_at', { ascending: false }).limit(50)
+                supabase.from('push_reminder_deliveries').select('id,subscription_id,schedule_id,reminder_type,delivered_at').order('delivered_at', { ascending: false }).limit(50),
+                supabase.from('schedule_notifications').select('id,schedule_id,action,message,created_at,read_at').eq('member_id', member.id).order('created_at', { ascending: false }).limit(50),
+                supabase.from('schedule_attendance').select('id,schedule_id,occurrence_date,status').eq('member_id', member.id),
+                supabase.from('workout_completions').select('id,workout_id,exercise_index,completion_date,completed').eq('member_id', member.id)
             ]);
             const result = [measurementsResult, workoutsResult, dietsResult, documentsResult, schedulesResult, pushResult, deliveriesResult]
                 .find(item => item.error);
@@ -823,6 +922,9 @@
                 documents: documentsResult.data || [],
                 schedules: schedulesResult.data || [],
                 deliveries: deliveriesResult.data || [],
+                notifications: notificationsResult.error ? [] : (notificationsResult.data || []),
+                attendance: attendanceResult.error ? [] : (attendanceResult.data || []),
+                completions: completionsResult.error ? [] : (completionsResult.data || []),
                 pushEnabled: (pushResult.data || []).length > 0
             });
             if (!member.degerlendirme_tamamlandi) window.showMemberAssessment(member);
@@ -1999,6 +2101,12 @@
         if (overview) {
             const branchCount = new Set(state.members.map(member => member.brans).filter(Boolean)).size;
             const measuredCount = new Set(state.measurements.map(measurement => measurement.member_id)).size;
+            const today = new Date();
+            const todayDay = today.getDay() || 7;
+            const todayMinutes = (today.getHours() * 60) + today.getMinutes();
+            const todaySchedules = state.schedules.filter(item => Number(item.day_of_week) === todayDay);
+            const upcomingToday = todaySchedules.filter(item => timeToMinutes(item.start_time) >= todayMinutes).length;
+            const activeMembers = state.members.filter(member => member.auth_user_id).length;
             overview.innerHTML = `
                 <div class="member-overview-card">
                     <span>Toplam danışan</span>
@@ -2011,6 +2119,16 @@
                 <div class="member-overview-card">
                     <span>Ölçümü bulunan</span>
                     <strong>${measuredCount}</strong>
+                </div>
+                <div class="member-overview-card">
+                    <span>Bugünkü seanslar</span>
+                    <strong>${todaySchedules.length}</strong>
+                    <small>${upcomingToday} yaklaşan</small>
+                </div>
+                <div class="member-overview-card">
+                    <span>Aktif / pasif üye</span>
+                    <strong>${activeMembers} / ${Math.max(0, state.members.length - activeMembers)}</strong>
+                    <small>${state.schedules.length} planlı seans</small>
                 </div>
             `;
         }
@@ -2120,11 +2238,38 @@
         renderScheduleRows(rows);
     };
 
+    const scheduleFilters = { memberId: '', branch: '' };
+
+    window.applyScheduleFilters = () => {
+        scheduleFilters.memberId = document.getElementById('schedule-filter-member')?.value || '';
+        scheduleFilters.branch = document.getElementById('schedule-filter-branch')?.value || '';
+        renderWeeklySchedule();
+    };
+
+    function renderScheduleFilters() {
+        const memberSelect = document.getElementById('schedule-filter-member');
+        const branchSelect = document.getElementById('schedule-filter-branch');
+        if (memberSelect) {
+            memberSelect.innerHTML = '<option value="">Tümü</option>' +
+                state.members.map(member => `<option value="${member.id}">${escapePortalText(member.ad_soyad)}</option>`).join('');
+            memberSelect.value = scheduleFilters.memberId;
+        }
+        if (branchSelect) {
+            branchSelect.innerHTML = '<option value="">Tümü</option>' +
+                scheduleBranches.map(branch => `<option value="${escapePortalText(branch)}">${escapePortalText(branch)}</option>`).join('');
+            branchSelect.value = scheduleFilters.branch;
+        }
+    }
+
     function renderWeeklySchedule() {
         const container = document.getElementById('weekly-schedule-grid');
         if (!container) return;
-        const entries = state.schedules || [];
-        const conflictIds = getScheduleConflictIds(entries);
+        renderScheduleFilters();
+        const entries = (state.schedules || []).filter(item =>
+            (!scheduleFilters.memberId || String(item.member_id) === String(scheduleFilters.memberId)) &&
+            (!scheduleFilters.branch || item.branch === scheduleFilters.branch)
+        );
+        const conflictIds = getScheduleConflictIds(state.schedules || []);
         container.innerHTML = scheduleDays.map(([day, label]) => {
             const dayEntries = entries.filter(item => Number(item.day_of_week) === day)
                 .sort((a, b) => a.start_time.localeCompare(b.start_time));
@@ -2286,6 +2431,12 @@
             alert(`Çizelge kaydedilemedi: ${error.message}`);
             return;
         }
+        await Promise.all(rows.map((row, index) => createScheduleNotification({
+            memberId,
+            scheduleId: id && index === 0 ? id : entries[index].id,
+            action: id && index === 0 ? 'updated' : 'created',
+            message: `${getScheduleDayName(row.day_of_week)} günü ${row.start_time.slice(0, 5)} - ${row.end_time.slice(0, 5)} ${row.branch} seansı.`
+        })));
         const member = state.members.find(item => item.id == memberId);
         const primaryBranch = rows[0].branch;
         if (member && member.brans !== primaryBranch) {
@@ -2302,11 +2453,20 @@
     window.deleteScheduleEntry = async () => {
         const id = document.getElementById('schedule-id').value;
         if (!id || !confirm('Bu seans çizelgeden silinsin mi?')) return;
+        const deletedEntry = state.schedules.find(item => String(item.id) === String(id));
         const { error } = await supabase.from('weekly_program_schedule').delete().eq('id', id);
         if (error) {
             handleError(error, 'Schedule delete');
             alert(`Seans silinemedi: ${error.message}`);
             return;
+        }
+        if (deletedEntry) {
+            await createScheduleNotification({
+                memberId: deletedEntry.member_id,
+                scheduleId: id,
+                action: 'deleted',
+                message: `${getScheduleDayName(deletedEntry.day_of_week)} günü ${deletedEntry.start_time.slice(0, 5)} ${deletedEntry.branch} seansı kaldırıldı.`
+            });
         }
         await sync();
         window.closeModal('modal-schedule');

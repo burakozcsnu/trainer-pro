@@ -25,7 +25,10 @@ const tables = [
   'beslenme_planlari',
   'weekly_program_schedule',
   'push_subscriptions',
-  'push_reminder_deliveries'
+  'push_reminder_deliveries',
+  'schedule_notifications',
+  'schedule_attendance',
+  'workout_completions'
 ];
 
 async function migrate() {
@@ -47,6 +50,15 @@ async function migrate() {
       }
       if (table === 'push_reminder_deliveries') {
         await client.query(`DROP POLICY IF EXISTS "push_reminder_deliveries_member_read" ON push_reminder_deliveries;`);
+      }
+      if (table === 'schedule_notifications') {
+        await client.query(`DROP POLICY IF EXISTS "schedule_notifications_member_read" ON schedule_notifications;`);
+      }
+      if (table === 'schedule_attendance') {
+        await client.query(`DROP POLICY IF EXISTS "schedule_attendance_member_access" ON schedule_attendance;`);
+      }
+      if (table === 'workout_completions') {
+        await client.query(`DROP POLICY IF EXISTS "workout_completions_member_access" ON workout_completions;`);
       }
       await client.query(`
         CREATE POLICY "${table}_admin_access"
@@ -208,6 +220,46 @@ async function migrate() {
         SELECT 1 FROM push_subscriptions
         JOIN uyeler ON uyeler.id = push_subscriptions.member_id
         WHERE push_subscriptions.id = push_reminder_deliveries.subscription_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
+
+      CREATE POLICY "schedule_notifications_member_read"
+      ON schedule_notifications
+      FOR SELECT
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = schedule_notifications.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
+
+      CREATE POLICY "schedule_attendance_member_access"
+      ON schedule_attendance
+      FOR ALL
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = schedule_attendance.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ))
+      WITH CHECK (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = schedule_attendance.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
+
+      CREATE POLICY "workout_completions_member_access"
+      ON workout_completions
+      FOR ALL
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = workout_completions.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ))
+      WITH CHECK (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = workout_completions.member_id
           AND uyeler.auth_user_id = auth.uid()
       ));
     `);
