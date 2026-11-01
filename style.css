@@ -1542,6 +1542,43 @@ body,
 .member-assessment-actions button {
     flex: 1;
 }
+.assessment-admin-card {
+    cursor: pointer;
+}
+.assessment-admin-card:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+}
+.assessment-admin-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1rem;
+}
+.assessment-detail-intro {
+    margin-bottom: 1rem;
+}
+.assessment-detail-list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+}
+.assessment-detail-list > div {
+    padding: 0.85rem;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+.assessment-detail-list dt {
+    margin-bottom: 0.3rem;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+}
+.assessment-detail-list dd {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
 @keyframes assessment-question-in {
     from { opacity: 0; transform: translateX(18px); }
     to { opacity: 1; transform: translateX(0); }

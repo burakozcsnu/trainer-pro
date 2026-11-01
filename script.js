@@ -1852,7 +1852,9 @@
             const completed = Boolean(member.degerlendirme_tamamlandi);
             const answers = window.safeJSONParse(member.degerlendirme_verileri, {});
             return `
-                <article class="card assessment-admin-card">
+                <article class="card assessment-admin-card" role="button" tabindex="0"
+                    onclick="window.openAssessmentDetails(${member.id})"
+                    onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.openAssessmentDetails(${member.id}); }">
                     <div class="member-card-top">
                         <div>
                             <span class="eyebrow">${completed ? 'TAMAMLANDI' : 'BEKLENİYOR'}</span>
@@ -1866,10 +1868,49 @@
                         <p><strong>Hareket:</strong> ${escapePortalText(member.hareket_aliskanliklari)}</p>
                         <p class="member-portal-muted">Boy: ${escapePortalText(member.boy)} cm · ${escapePortalText(answers.boy?.weight)} kg</p>
                     ` : '<p class="member-portal-muted">Danışan ilk girişinde anketi tamamladığında bilgiler burada görünecek.</p>'}
-                    <button class="btn-secondary" type="button" onclick="window.openProfile(${member.id})">Üye kartını aç</button>
+                    <div class="assessment-admin-actions">
+                        <button class="btn-secondary" type="button"
+                            onclick="event.stopPropagation(); window.openAssessmentDetails(${member.id})">Anket detayları</button>
+                        <button class="btn-secondary" type="button"
+                            onclick="event.stopPropagation(); window.openProfile(${member.id})">Üye kartını aç</button>
+                    </div>
                 </article>`;
         }).join('');
     }
+
+    window.openAssessmentDetails = (memberId) => {
+        const member = state.members.find(item => item.id == memberId);
+        if (!member) return;
+        const answers = window.safeJSONParse(member.degerlendirme_verileri, {});
+        const formatValue = value => Array.isArray(value) ? value.join(', ') : (value || 'Belirtilmedi');
+        const rows = [
+            ['Ad Soyad', answers.ad_soyad || member.ad_soyad],
+            ['Cep telefonu', answers.telefon || member.telefon],
+            ['Doğum tarihi', answers.dogum_tarihi || member.dogum_tarihi],
+            ['Cinsiyet', answers.cinsiyet || member.cinsiyet],
+            ['Boy', answers.boy?.height ? `${answers.boy.height} cm` : member.boy ? `${member.boy} cm` : 'Belirtilmedi'],
+            ['Mevcut kilo', answers.boy?.weight ? `${answers.boy.weight} kg` : 'Belirtilmedi'],
+            ['Hastalık geçmişi', answers.saglik_gecmisi || member.saglik_gecmisi],
+            ['Alerjiler', answers.alerjiler || member.alerjiler],
+            ['Beslenme alışkanlıkları', answers.beslenme_aliskanliklari || member.beslenme_aliskanliklari],
+            ['Hareket alışkanlıkları', answers.hareket_aliskanliklari || member.hareket_aliskanliklari],
+            ['Spor geçmişi', answers.spor_gecmisi || member.spor_gecmisi],
+            ['Hizmet beklentileri', answers.beklentiler || member.beklentiler]
+        ];
+        document.getElementById('detail-title').textContent = `Akıllı Değerlendirme · ${member.ad_soyad}`;
+        document.getElementById('detail-body').innerHTML = `
+            <p class="member-portal-muted assessment-detail-intro">
+                ${member.degerlendirme_tarihi ? `Tamamlanma: ${escapePortalText(new Date(member.degerlendirme_tarihi).toLocaleString('tr-TR'))}` : 'Değerlendirme tamamlanmadı.'}
+            </p>
+            <dl class="assessment-detail-list">
+                ${rows.map(([label, value]) => `
+                    <div>
+                        <dt>${escapePortalText(label)}</dt>
+                        <dd>${escapePortalText(formatValue(value))}</dd>
+                    </div>`).join('')}
+            </dl>`;
+        window.openModal('modal-detail');
+    };
 
     window.startSurvey = () => {
         window.nav('assessment-view');
