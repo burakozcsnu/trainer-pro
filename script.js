@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.107';
+    const APP_VERSION = '1.3.108';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -180,6 +180,7 @@
     };
 
     const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+    const dataService = window.TrainerProDataService.create(supabase);
     supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_OUT') {
             exitAdminPortal();
@@ -3873,25 +3874,6 @@ window.editMeasurement = (id) => {
 
     // --- SYNC & INITIALIZATION ---
 
-    async function fetchAll(table) {
-        let allData = [];
-        let from = 0;
-        const step = 1000;
-        while (true) {
-            const { data, error } = await supabase.from(table).select('*').range(from, from + step - 1);
-            if (error) return { data: null, error: error };
-            if (data && data.length > 0) {
-                allData = allData.concat(data);
-                from += step;
-                if (data.length < step) break;
-            } else {
-                break;
-            }
-        }
-        return { data: allData, error: null };
-    }
-
-
     // --- OFFLINE & LOCAL STORAGE CACHING ---
     function saveToLocal() {
         try {
@@ -3971,8 +3953,8 @@ window.editMeasurement = (id) => {
                 supabase.from('antrenmanlar').select('*'),
                 supabase.from('dokumanlar').select('*'),
                 supabase.from('weekly_program_schedule').select('*'),
-                fetchAll('master_egzersizler'),
-                fetchAll('master_besinler'),
+                dataService.fetchAll('master_egzersizler').then(data => ({ data, error: null })).catch(error => ({ data: null, error })),
+                dataService.fetchAll('master_besinler').then(data => ({ data, error: null })).catch(error => ({ data: null, error })),
                 supabase.from('beslenme_planlari').select('*'),
                 supabase.from('health_metrics').select('*'),
                 supabase.from('workout_sessions').select('*'),
