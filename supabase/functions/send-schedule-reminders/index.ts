@@ -52,15 +52,19 @@ const scheduleOccurrence = (dayOfWeek: number, time: string, now: Date) => {
 };
 
 const fetchJson = async (path: string, options: RequestInit = {}) => {
-    const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, { ...options, headers: { ...headers, ...options.headers } });
+    const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
+        ...options,
+        headers: { ...headers, ...options.headers }
+    });
     if (!response.ok) throw new Error(`${path}: ${response.status} ${await response.text()}`);
     return response.json();
 };
 
-Deno.serve(async (request) => {
-    if (cronSecret && request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
+Deno.serve(async request => {
+    if (request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
         return new Response('Unauthorized', { status: 401 });
     }
+
     const now = new Date();
     const schedules = await fetchJson('weekly_program_schedule?select=*');
     const subscriptions = await fetchJson('push_subscriptions?select=*');
@@ -110,5 +114,7 @@ Deno.serve(async (request) => {
             }
         }
     }
-    return new Response(JSON.stringify({ sent }), { headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ sent }), {
+        headers: { 'Content-Type': 'application/json' }
+    });
 });
