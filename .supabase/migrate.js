@@ -166,6 +166,7 @@ async function migrate() {
       CREATE TABLE IF NOT EXISTS trainers (
         id TEXT PRIMARY KEY,
         full_name TEXT NOT NULL,
+        auth_user_id UUID UNIQUE,
         active BOOLEAN NOT NULL DEFAULT true,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
@@ -173,6 +174,9 @@ async function migrate() {
       INSERT INTO trainers (id, full_name)
       VALUES ('burak-ozcan', 'Burak Özcan')
       ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name;
+      ALTER TABLE trainers
+        ADD COLUMN IF NOT EXISTS auth_user_id UUID UNIQUE;
+      CREATE INDEX IF NOT EXISTS uyeler_auth_user_id_idx ON uyeler (auth_user_id);
 
       DO $$
       BEGIN

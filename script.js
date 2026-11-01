@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.109';
+    const APP_VERSION = '1.3.110';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -73,6 +73,7 @@
         const label = document.getElementById('auth-identity-label');
         const input = document.getElementById('auth-email');
         const signup = document.getElementById('auth-signup-toggle');
+        const reset = document.getElementById('auth-reset-button');
         if (label) label.textContent = 'E-posta';
         if (input) {
             input.type = 'email';
@@ -81,6 +82,7 @@
             input.autocomplete = 'username';
         }
         if (signup) signup.hidden = false;
+        if (reset) reset.hidden = false;
         const copy = document.getElementById('auth-signup-copy');
         if (copy) copy.hidden = activeAuthMode !== 'signup';
     };
@@ -88,6 +90,7 @@
         const label = document.getElementById('auth-identity-label');
         const input = document.getElementById('auth-email');
         const signup = document.getElementById('auth-signup-toggle');
+        const reset = document.getElementById('auth-reset-button');
         const copy = document.getElementById('auth-signup-copy');
         if (label) label.textContent = 'E-posta';
         if (input) {
@@ -97,6 +100,7 @@
             input.autocomplete = 'username';
         }
         if (signup) signup.hidden = true;
+        if (reset) reset.hidden = false;
         if (copy) copy.hidden = true;
     };
     window.toggleMemberSignup = () => {
@@ -111,6 +115,27 @@
         if (toggle) toggle.textContent = activeAuthMode === 'signup' ? 'Giriş Yap' : 'Kayıt Ol';
         if (copy) copy.hidden = activeAuthMode !== 'signup';
         showAuthError('');
+    };
+    window.requestPasswordReset = async () => {
+        const identity = document.getElementById('auth-email')?.value.trim();
+        if (!identity) {
+            showAuthError('Önce e-posta adresinizi girin.');
+            document.getElementById('auth-email')?.focus();
+            return;
+        }
+        try {
+            const { error } = await withAuthTimeout(
+                supabase.auth.resetPasswordForEmail(identity, {
+                    redirectTo: `${window.location.origin}${window.location.pathname}?reset=1`
+                }),
+                'Şifre sıfırlama isteği zaman aşımına uğradı.'
+            );
+            if (error) throw error;
+            showAuthError('Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.');
+        } catch (error) {
+            handleError(error, 'Password reset');
+            showAuthError('Şifre sıfırlama bağlantısı gönderilemedi.');
+        }
     };
     const isAdminSession = (session) => session?.user?.app_metadata?.role === 'admin';
     const isMemberSession = (session) => session?.user?.app_metadata?.role === 'user';
@@ -182,6 +207,24 @@
     const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
     const dataService = window.TrainerProDataService.create(supabase);
     supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+            window.setTimeout(async () => {
+                const password = window.prompt('Yeni şifrenizi girin:');
+                if (!password || password.length < 8) {
+                    showAuthError('Yeni şifre en az 8 karakter olmalıdır.');
+                    return;
+                }
+                const { error } = await supabase.auth.updateUser({ password });
+                if (error) {
+                    handleError(error, 'Password update');
+                    showAuthError('Yeni şifre kaydedilemedi.');
+                    return;
+                }
+                showAuthError('Şifreniz güncellendi. Giriş yapabilirsiniz.');
+                await supabase.auth.signOut();
+            }, 0);
+            return;
+        }
         if (event === 'SIGNED_OUT') {
             exitAdminPortal();
             return;
@@ -205,6 +248,36 @@
         } catch (error) {
             handleError(error, 'Admin logout');
             alert('Çıkış yapılamadı. Lütfen tekrar deneyin.');
+        }
+    };
+    window.exportMyData = async () => {
+        try {
+            const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError) throw sessionError;
+            const userId = sessionData.session?.user?.id;
+            if (!userId) throw new Error('Active session not found.');
+            const member = state.members.find(item => item.auth_user_id === userId);
+            if (!member) throw new Error('Member profile not found.');
+            const memberId = member.id;
+            const exportData = {
+                exportedAt: new Date().toISOString(),
+                profile: member,
+                measurements: state.measurements.filter(item => item.member_id === memberId),
+                workouts: state.workouts.filter(item => item.member_id === memberId),
+                schedules: state.schedules.filter(item => item.member_id === memberId),
+                healthMetrics: state.healthMetrics.filter(item => item.member_id === memberId),
+                workoutSessions: state.workoutSessions.filter(item => item.member_id === memberId)
+            };
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `trainer-pro-veriler-${new Date().toISOString().slice(0, 10)}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            handleError(error, 'Data export');
+            alert('Veriler dışa aktarılamadı. Lütfen tekrar deneyin.');
         }
     };
     window.handleAdminLogin = async (event) => {
@@ -872,7 +945,7 @@
             if (!member) throw new Error('Bu kullanıcı henüz aktif bir danışan profiline bağlanmamış. Lütfen antrenörünüzden sizi sisteme dahil etmesini isteyin.');
 
             // Sonra o member'in ID'siyle güvenli bir şekilde filtreleyerek sadece ONUN verilerini çek
-            const [measurementsResult, workoutsResult, dietsResult, documentsResult, schedulesResult, pushResult, deliveriesResult, notificationsResult, attendanceResult, completionsResult] = await Promise.all([
+            const [measurementsResult, workoutsResult, dietsResult, documentsResult, schedulesResult, pushResult, deliveriesResult, notificationsResult, attendanceResult, completionsResult, healthMetricsResult, workoutSessionsResult] = await Promise.all([
                 supabase.from('olcumler').select('*').eq('member_id', member.id),
                 supabase.from('antrenmanlar').select('*').eq('member_id', member.id),
                 supabase.from('beslenme_planlari').select('*').eq('member_id', member.id),
@@ -882,11 +955,19 @@
                 supabase.from('push_reminder_deliveries').select('id,subscription_id,schedule_id,reminder_type,delivered_at').order('delivered_at', { ascending: false }).limit(50),
                 supabase.from('schedule_notifications').select('id,schedule_id,action,message,created_at,read_at').eq('member_id', member.id).order('created_at', { ascending: false }).limit(50),
                 supabase.from('schedule_attendance').select('id,schedule_id,occurrence_date,status').eq('member_id', member.id),
-                supabase.from('workout_completions').select('id,workout_id,exercise_index,completion_date,completed').eq('member_id', member.id)
+                supabase.from('workout_completions').select('id,workout_id,exercise_index,completion_date,completed').eq('member_id', member.id),
+                supabase.from('health_metrics').select('*').eq('member_id', member.id),
+                supabase.from('workout_sessions').select('*').eq('member_id', member.id)
             ]);
             const result = [measurementsResult, workoutsResult, dietsResult, documentsResult, schedulesResult, pushResult, deliveriesResult]
                 .find(item => item.error);
             if (result?.error) throw result.error;
+            state.members = [member];
+            state.measurements = measurementsResult.data || [];
+            state.workouts = workoutsResult.data || [];
+            state.schedules = schedulesResult.data || [];
+            state.healthMetrics = healthMetricsResult.error ? [] : (healthMetricsResult.data || []);
+            state.workoutSessions = workoutSessionsResult.error ? [] : (workoutSessionsResult.data || []);
 
             // Measurements'ları render etmeden önce hesaplanmış (sanal) alanlarını (BMR, VO2Max vb.) geri getir (Admin panelindeki sync mantığıyla aynı)
             const mappedMeasurements = (measurementsResult.data || []).map(m => {
