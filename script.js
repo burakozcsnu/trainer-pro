@@ -162,7 +162,7 @@
     const CONFIG = {
         SUPABASE_URL: 'https://mdcvljbbnoxqsfwcjvqz.supabase.co',
         SUPABASE_KEY: 'sb_publishable_cR0_yg6oxqfP4mAcPTL4Bw_ZhW16sSr',
-        VAPID_PUBLIC_KEY: '',
+        VAPID_PUBLIC_KEY: 'BA4GRDmB8WDBMjgK8HRuqN7LuYUKgCKpaFLzpVjkjmxvA73_8pqWDZ10zhOBpmGMoKdqqKy1cGEqgQP7FBym-k8',
         IS_DEV: true
     };
 
