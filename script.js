@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.99';
+    const APP_VERSION = '1.3.100';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -2128,8 +2128,9 @@
         container.innerHTML = scheduleDays.map(([day, label]) => {
             const dayEntries = entries.filter(item => Number(item.day_of_week) === day)
                 .sort((a, b) => a.start_time.localeCompare(b.start_time));
+            const conflictCount = dayEntries.filter(item => conflictIds.has(String(item.id))).length;
             return `<section class="weekly-schedule-day">
-                <h3>${label}</h3>
+                <h3>${label}${conflictCount ? ` <span class="weekly-schedule-conflict-count">${conflictCount} çakışma</span>` : ''}</h3>
                 ${dayEntries.length ? dayEntries.map(item => {
                     const member = state.members.find(candidate => candidate.id == item.member_id);
                     const hasConflict = conflictIds.has(String(item.id));

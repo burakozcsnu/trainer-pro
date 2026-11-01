@@ -1635,9 +1635,21 @@ body,
     border-radius: 16px;
 }
 .weekly-schedule-day h3 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
     margin-bottom: 0.75rem;
     color: var(--primary);
     font-size: 0.9rem;
+}
+.weekly-schedule-conflict-count {
+    padding: 0.2rem 0.4rem;
+    color: var(--danger);
+    font-size: 0.68rem;
+    font-weight: 700;
+    background: rgba(235, 87, 87, 0.12);
+    border-radius: 999px;
 }
 .weekly-schedule-entry {
     display: grid;
