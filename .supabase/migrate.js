@@ -203,7 +203,7 @@ async function migrate() {
       await client.query(`
         INSERT INTO master_egzersizler (id, ad, brans, gruplar)
         VALUES ($1, $2, $3, $4::jsonb)
-        ON CONFLICT (id) DO UPDATE SET ad = EXCLUDED.ad, brans = EXCLUDED.brans, gruplar = EXCLUDED.gruplar
+        ON CONFLICT (ad) DO UPDATE SET brans = EXCLUDED.brans, gruplar = EXCLUDED.gruplar
       `, [
         910000000000 + index,
         name,
