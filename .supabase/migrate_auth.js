@@ -166,6 +166,16 @@ async function migrate() {
         WHERE uyeler.id = beslenme_planlari.member_id
           AND uyeler.auth_user_id = auth.uid()
       ));
+
+      CREATE POLICY "weekly_program_schedule_member_read"
+      ON weekly_program_schedule
+      FOR SELECT
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM uyeler
+        WHERE uyeler.id = weekly_program_schedule.member_id
+          AND uyeler.auth_user_id = auth.uid()
+      ));
     `);
     await client.query(`NOTIFY pgrst, 'reload schema';`);
     console.log('Admin-only RLS policies enabled.');

@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.91';
+    const APP_VERSION = '1.3.92';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -137,6 +137,10 @@
         document.getElementById('portal-roles').hidden = true;
         document.getElementById('app-wrapper')?.removeAttribute('hidden');
         document.getElementById('member-portal')?.setAttribute('hidden', '');
+        window.clearInterval(memberNotificationTimer);
+        memberNotificationTimer = null;
+        memberNotificationMember = null;
+        memberNotificationSchedules = [];
         window.closeModal('modal-auth');
         setSyncStatus('offline', 'Yönetici girişi bekleniyor');
         if (realtimeChannel) {
@@ -262,10 +266,80 @@
             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
         }[character]));
 
-    const renderMemberPortal = ({ member, measurements, workouts, diets, documents }) => {
+    let memberNotificationTimer = null;
+    let memberNotificationSchedules = [];
+    let memberNotificationMember = null;
+
+    const getNextScheduleOccurrence = (dayOfWeek, time) => {
+        const now = new Date();
+        const today = (now.getDay() + 6) % 7 + 1;
+        const daysUntil = (Number(dayOfWeek) - today + 7) % 7;
+        const occurrence = new Date(now);
+        occurrence.setDate(now.getDate() + daysUntil);
+        const [hours, minutes] = time.slice(0, 5).split(':').map(Number);
+        occurrence.setHours(hours, minutes, 0, 0);
+        if (occurrence <= now) occurrence.setDate(occurrence.getDate() + 7);
+        return occurrence;
+    };
+
+    const notifyMemberSession = (schedule, offsetLabel, occurrence) => {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        const key = `trainerpro-notification:${schedule.id}:${occurrence.toISOString()}:${offsetLabel}`;
+        if (localStorage.getItem(key)) return;
+        localStorage.setItem(key, '1');
+        new Notification('Zen Wellness Club seans hatırlatması', {
+            body: `${getScheduleDayName(schedule.day_of_week)} ${schedule.start_time.slice(0, 5)} · ${schedule.branch} seansınız ${offsetLabel}.`,
+            icon: 'zen-wellness-logo.png'
+        });
+    };
+
+    function checkMemberNotifications() {
+        if (!memberNotificationMember || !memberNotificationSchedules.length) return;
+        const now = Date.now();
+        memberNotificationSchedules.forEach(schedule => {
+            const occurrence = getNextScheduleOccurrence(schedule.day_of_week, schedule.start_time);
+            [24 * 60 * 60 * 1000, 60 * 60 * 1000].forEach(offset => {
+                const remaining = occurrence.getTime() - now;
+                if (remaining >= offset - 30 * 1000 && remaining <= offset + 30 * 1000) {
+                    notifyMemberSession(schedule, offset === 3600000 ? '1 saat sonra' : '1 gün sonra', occurrence);
+                }
+            });
+        });
+    }
+
+    function startMemberNotifications(member, schedules) {
+        memberNotificationMember = member;
+        memberNotificationSchedules = schedules;
+        window.clearInterval(memberNotificationTimer);
+        memberNotificationTimer = window.setInterval(checkMemberNotifications, 30000);
+        checkMemberNotifications();
+        const status = document.getElementById('member-notification-status');
+        if (status && 'Notification' in window && Notification.permission === 'granted') {
+            status.textContent = 'Bildirimler açık: 1 gün ve 1 saat önce hatırlatılacaksınız.';
+        }
+    }
+
+    window.enableMemberNotifications = async () => {
+        const status = document.getElementById('member-notification-status');
+        if (!('Notification' in window)) {
+            if (status) status.textContent = 'Bu tarayıcı bildirimleri desteklemiyor.';
+            return;
+        }
+        const permission = await Notification.requestPermission();
+        if (status) {
+            status.textContent = permission === 'granted'
+                ? 'Bildirimler açık: 1 gün ve 1 saat önce hatırlatılacaksınız.'
+                : 'Bildirim izni verilmedi. Tarayıcı ayarlarından izin verebilirsiniz.';
+        }
+        checkMemberNotifications();
+    };
+
+    const renderMemberPortal = ({ member, measurements, workouts, diets, documents, schedules }) => {
         const sortedMeasurements = [...measurements].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
         const sortedWorkouts = [...workouts].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
         const sortedDiets = [...diets].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
+        const sortedSchedules = [...schedules].sort((a, b) =>
+            Number(a.day_of_week) - Number(b.day_of_week) || a.start_time.localeCompare(b.start_time));
         const latest = sortedMeasurements[0];
         const metrics = [
             ['Kilo', latest?.weight, 'kg'],
@@ -280,6 +354,21 @@
                 <p class="member-portal-muted">Hoş geldiniz</p>
                 <h1>${escapePortalText(member.ad_soyad)}</h1>
                 <p class="member-portal-muted">${latest ? `Son ölçüm: ${escapePortalText(latest.tarih)}` : 'Henüz ölçüm kaydı bulunmuyor.'}</p>
+                <div class="member-portal-notification">
+                    <strong>Seans hatırlatmaları</strong>
+                    <span id="member-notification-status">24 saat ve 1 saat önce bildirim almak için izin verin.</span>
+                    <button class="btn-secondary" type="button" onclick="window.enableMemberNotifications()">Bildirimleri etkinleştir</button>
+                </div>
+            </section>
+            <section class="member-portal-card member-portal-section" data-portal-section="schedule">
+                <h2>🗓️ Haftalık programım</h2>
+                ${sortedSchedules.length ? `<ul class="member-portal-list member-schedule-list">${sortedSchedules.map(item => `
+                    <li>
+                        <strong>${escapePortalText(getScheduleDayName(item.day_of_week))}</strong>
+                        <span>${escapePortalText(item.start_time.slice(0, 5))} - ${escapePortalText(item.end_time?.slice(0, 5) || '--:--')}</span>
+                        <b>${escapePortalText(item.branch)}</b>
+                        ${item.notes ? `<small>${escapePortalText(item.notes)}</small>` : ''}
+                    </li>`).join('')}</ul>` : '<p class="member-portal-muted">Henüz haftalık seans atanmadı.</p>'}
             </section>
             <div class="member-portal-grid" style="margin-top:1rem">
                 <section class="member-portal-card member-portal-section" data-portal-section="measurements">
@@ -347,6 +436,7 @@
                 </section>
             </div>`;
         window.selectMemberPortalTab('overview');
+        startMemberNotifications(member, sortedSchedules);
     };
 
     window.selectMemberPortalTab = (tab) => {
@@ -562,11 +652,12 @@
             if (!member) throw new Error('Bu kullanıcı henüz aktif bir danışan profiline bağlanmamış. Lütfen antrenörünüzden sizi sisteme dahil etmesini isteyin.');
 
             // Sonra o member'in ID'siyle güvenli bir şekilde filtreleyerek sadece ONUN verilerini çek
-            const [measurementsResult, workoutsResult, dietsResult, documentsResult] = await Promise.all([
+            const [measurementsResult, workoutsResult, dietsResult, documentsResult, schedulesResult] = await Promise.all([
                 supabase.from('olcumler').select('*').eq('member_id', member.id),
                 supabase.from('antrenmanlar').select('*').eq('member_id', member.id),
                 supabase.from('beslenme_planlari').select('*').eq('member_id', member.id),
-                supabase.from('dokumanlar').select('*').eq('member_id', member.id)
+                supabase.from('dokumanlar').select('*').eq('member_id', member.id),
+                supabase.from('weekly_program_schedule').select('*').eq('member_id', member.id)
             ]);
             const result = [measurementsResult, workoutsResult, dietsResult, documentsResult]
                 .find(item => item.error);
@@ -604,7 +695,8 @@
                 measurements: mappedMeasurements,
                 workouts: workoutsResult.data || [],
                 diets: dietsResult.data || [],
-                documents: documentsResult.data || []
+                documents: documentsResult.data || [],
+                schedules: schedulesResult.data || []
             });
             if (!member.degerlendirme_tamamlandi) window.showMemberAssessment(member);
             if (status) status.textContent = 'Salt okunur danışan paneli';
