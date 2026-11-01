@@ -6,7 +6,7 @@
 
  document.addEventListener('DOMContentLoaded', () => {
     // --- CACHE BUSTER ---
-    const APP_VERSION = '1.3.95';
+    const APP_VERSION = '1.3.96';
     const vTag = document.getElementById('version-tag');
     if (vTag) vTag.innerText = `v${APP_VERSION} - Realtime Sync`;
     let activeLoginRole = 'admin';
@@ -421,12 +421,32 @@
         checkMemberNotifications();
     };
 
-    const renderMemberPortal = ({ member, measurements, workouts, diets, documents, schedules, pushEnabled }) => {
+    window.disableMemberNotifications = async () => {
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            if (subscription) {
+                const { error } = await supabase.from('push_subscriptions')
+                    .delete().eq('endpoint', subscription.endpoint);
+                if (error) throw error;
+                await subscription.unsubscribe();
+            }
+            await loadMemberPortal();
+        } catch (error) {
+            handleError(error, 'Member push unsubscribe');
+            alert(`Bildirimler kapatılamadı: ${error.message}`);
+        }
+    };
+
+    const renderMemberPortal = ({ member, measurements, workouts, diets, documents, schedules, deliveries, pushEnabled }) => {
         const sortedMeasurements = [...measurements].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
         const sortedWorkouts = [...workouts].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
         const sortedDiets = [...diets].sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
         const sortedSchedules = [...schedules].sort((a, b) =>
             Number(a.day_of_week) - Number(b.day_of_week) || a.start_time.localeCompare(b.start_time));
+        const sortedDeliveries = [...deliveries].sort((a, b) =>
+            new Date(b.delivered_at) - new Date(a.delivered_at));
+        const scheduleById = new Map(sortedSchedules.map(schedule => [String(schedule.id), schedule]));
         const latest = sortedMeasurements[0];
         const metrics = [
             ['Kilo', latest?.weight, 'kg'],
@@ -447,6 +467,7 @@
                     <div class="member-notification-actions">
                         <button class="btn-secondary" type="button" ${pushEnabled ? 'hidden' : ''} onclick="window.enableMemberNotifications()">Bildirimleri etkinleştir</button>
                         <button class="btn-secondary" type="button" onclick="window.sendTestNotification()">Test bildirimi</button>
+                        <button class="btn-secondary" type="button" ${pushEnabled ? '' : 'hidden'} onclick="window.disableMemberNotifications()">Bu cihazda kapat</button>
                     </div>
                 </div>
             </section>
@@ -459,6 +480,18 @@
                         <b>${escapePortalText(item.branch)}</b>
                         ${item.notes ? `<small>${escapePortalText(item.notes)}</small>` : ''}
                     </li>`).join('')}</ul>` : '<p class="member-portal-muted">Henüz haftalık seans atanmadı.</p>'}
+            </section>
+            <section class="member-portal-card member-portal-section" data-portal-section="notifications">
+                <h2>🔔 Bildirim Merkezi</h2>
+                <p class="member-portal-muted">Bu cihazdaki seans hatırlatmaları ve gönderim geçmişi.</p>
+                ${sortedDeliveries.length ? `<ul class="member-portal-list member-notification-history">${sortedDeliveries.slice(0, 20).map(delivery => {
+                    const schedule = scheduleById.get(String(delivery.schedule_id));
+                    const timing = delivery.reminder_type === 'day-before' ? '1 gün önce' : '1 saat önce';
+                    return `<li>
+                        <strong>${escapePortalText(schedule ? `${getScheduleDayName(schedule.day_of_week)} ${schedule.start_time.slice(0, 5)} · ${schedule.branch}` : 'Seans hatırlatması')}</strong>
+                        <span>${escapePortalText(timing)} · ${escapePortalText(new Date(delivery.delivered_at).toLocaleString('tr-TR'))}</span>
+                    </li>`;
+                }).join('')}</ul>` : '<p class="member-portal-muted">Henüz gönderilmiş seans bildirimi yok.</p>'}
             </section>
             <div class="member-portal-grid" style="margin-top:1rem">
                 <section class="member-portal-card member-portal-section" data-portal-section="measurements">
@@ -742,15 +775,16 @@
             if (!member) throw new Error('Bu kullanıcı henüz aktif bir danışan profiline bağlanmamış. Lütfen antrenörünüzden sizi sisteme dahil etmesini isteyin.');
 
             // Sonra o member'in ID'siyle güvenli bir şekilde filtreleyerek sadece ONUN verilerini çek
-            const [measurementsResult, workoutsResult, dietsResult, documentsResult, schedulesResult, pushResult] = await Promise.all([
+            const [measurementsResult, workoutsResult, dietsResult, documentsResult, schedulesResult, pushResult, deliveriesResult] = await Promise.all([
                 supabase.from('olcumler').select('*').eq('member_id', member.id),
                 supabase.from('antrenmanlar').select('*').eq('member_id', member.id),
                 supabase.from('beslenme_planlari').select('*').eq('member_id', member.id),
                 supabase.from('dokumanlar').select('*').eq('member_id', member.id),
                 supabase.from('weekly_program_schedule').select('*').eq('member_id', member.id),
-                supabase.from('push_subscriptions').select('id').eq('member_id', member.id).limit(1)
+                supabase.from('push_subscriptions').select('id,endpoint').eq('member_id', member.id),
+                supabase.from('push_reminder_deliveries').select('id,subscription_id,schedule_id,reminder_type,delivered_at').order('delivered_at', { ascending: false }).limit(50)
             ]);
-            const result = [measurementsResult, workoutsResult, dietsResult, documentsResult, schedulesResult, pushResult]
+            const result = [measurementsResult, workoutsResult, dietsResult, documentsResult, schedulesResult, pushResult, deliveriesResult]
                 .find(item => item.error);
             if (result?.error) throw result.error;
 
@@ -788,6 +822,7 @@
                 diets: dietsResult.data || [],
                 documents: documentsResult.data || [],
                 schedules: schedulesResult.data || [],
+                deliveries: deliveriesResult.data || [],
                 pushEnabled: (pushResult.data || []).length > 0
             });
             if (!member.degerlendirme_tamamlandi) window.showMemberAssessment(member);
